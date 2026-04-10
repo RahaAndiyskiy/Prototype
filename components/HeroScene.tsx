@@ -33,8 +33,8 @@ export function HeroScene() {
       smootherRef.current = ScrollSmoother.create({
         wrapper: "#smooth-wrapper",
         content: "#smooth-content",
-        smooth: 1.1,
-        effects: false,
+        smooth: 2.5, // Increased for a more cinematic, heavy-inertia feel
+        effects: true,
         normalizeScroll: true,
       });
 
@@ -52,6 +52,13 @@ export function HeroScene() {
         y: 40,
       });
 
+      // Initial state: deep in space
+      gsap.set(".content-grid", {
+        z: -1500,
+        scale: 0.4,
+        opacity: 0,
+      });
+
       const timeline = gsap.timeline({
         defaults: {
           ease: "none",
@@ -59,40 +66,54 @@ export function HeroScene() {
         scrollTrigger: {
           trigger: ".hero-shell",
           start: "top top",
-          end: "+=140%",
-          scrub: 0.6,
+          end: "+=160%", // Increase end for longer travel feeling
+          scrub: 0.8,    // Slower scrub for more "weight"
           pin: true,
           anticipatePin: 1,
         },
       });
 
-      // 1. Magnetic Titles
+      // 1. Immediate motion from the start
       timeline
-        .to({}, { duration: 0.12 }) // Small delay/magnetic hold before split
+        .to(
+          ".content-grid",
+          {
+            z: 160,
+            scale: 1,
+            opacity: 1,
+            duration: 1.2,
+          },
+          0,
+        )
         .to(
           ".hero-title-left",
           {
-            xPercent: -55,
-            rotateY: 54,
+            xPercent: -80,
+            rotateY: 70,
+            z: 800, // Make titles "fly" past the viewer
             opacity: 0,
-            filter: "blur(18px)",
+            filter: "blur(20px)",
+            duration: 1,
           },
-          0.12,
+          0.1,
         )
         .to(
           ".hero-title-right",
           {
-            xPercent: 55,
-            rotateY: -54,
+            xPercent: 80,
+            rotateY: -70,
+            z: 800,
             opacity: 0,
-            filter: "blur(18px)",
+            filter: "blur(20px)",
+            duration: 1,
           },
-          0.08,
+          0.05,
         )
         .to(
           speedRef,
           {
-            current: 3.5,
+            current: 4.5,
+            duration: 0.8,
           },
           0,
         )
@@ -100,43 +121,36 @@ export function HeroScene() {
           ".card-left",
           {
             scale: 1,
-            rotateY: 12,
-            z: 40,
+            rotateY: 10,
+            z: 0,
             opacity: 1,
+            duration: 0.8,
           },
-          0.24,
+          0.4,
         )
         .to(
           ".card-right",
           {
             scale: 1,
-            rotateY: -12,
-            z: 40,
+            rotateY: -10,
+            z: 0,
             opacity: 1,
+            duration: 0.8,
           },
-          0.24,
+          0.4,
         )
-        // Micro-pause/magnetic hold before the cards finalize
-        .to({}, { duration: 0.08 }) 
-        .to(
-          ".content-grid",
-          {
-            z: 160,
-            scale: 1.02,
-          },
-          0.24,
-        )
-        // crossfade blur: cards sharpen as title dissolves
+        // Crossfade blur and final approach
         .to(
           ".content-card",
           {
             filter: "blur(0px)",
             opacity: 1,
             y: 0,
-            ease: "power1.out",
-            stagger: { each: 0.06, from: "center" },
+            ease: "power2.out",
+            stagger: { each: 0.1, from: "center" },
+            duration: 0.6,
           },
-          0.28,
+          0.6,
         );
     });
     return () => {
