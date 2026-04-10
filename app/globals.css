@@ -156,12 +156,12 @@ a {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: min(1000px, 90vw);
+  width: min(820px, calc(100% - 20vw));
   transform: translate(-50%, -50%);
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: minmax(16rem, 20rem) minmax(16rem, 20rem);
   justify-content: center;
-  gap: clamp(1.5rem, 4vw, 3rem);
+  gap: clamp(1rem, 2vw, 1.6rem);
   align-items: center;
   z-index: 14;
 }
@@ -209,14 +209,14 @@ a {
 .card-left {
   justify-self: start;
   transform-origin: 100% 50%;
-  transform: translate3d(-0.5vw, 0, -240px) rotateY(34deg) scale(0.68);
+  transform: translate3d(-1.6vw, 0, -320px) rotateY(44deg) scale(0.66);
   filter: blur(6px);
 }
 
 .card-right {
   justify-self: end;
   transform-origin: 0% 50%;
-  transform: translate3d(0.5vw, 0, -240px) rotateY(-34deg) scale(0.68);
+  transform: translate3d(1.6vw, 0, -320px) rotateY(-44deg) scale(0.66);
   filter: blur(6px);
 }
 
