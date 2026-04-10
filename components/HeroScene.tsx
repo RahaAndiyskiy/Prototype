@@ -142,7 +142,7 @@ export function HeroScene() {
             scale: 1.02,
           },
           0.24,
-        );
+        )
         // crossfade blur: cards sharpen as title dissolves
         .to(
           ".content-card",
