@@ -48,7 +48,7 @@ a {
 
 .hero-perspective {
   min-height: 100vh;
-  perspective: 1600px;
+  perspective: 800px;
   perspective-origin: 50% 50%;
   overflow: hidden;
   width: 100vw;

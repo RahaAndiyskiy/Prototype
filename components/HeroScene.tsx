@@ -57,8 +57,8 @@ export function HeroScene() {
         scrollTrigger: {
           trigger: ".hero-shell",
           start: "top top",
-          end: "+=220%",
-          scrub: true,
+          end: "+=140%",
+          scrub: 0.6,
           pin: true,
           anticipatePin: 1,
         },
@@ -68,7 +68,8 @@ export function HeroScene() {
         .to(
           ".hero-stage",
           {
-            scale: 1.22,
+            scale: 1.2,
+            y: "-6vh",
             z: 220,
           },
           0,
@@ -110,7 +111,7 @@ export function HeroScene() {
         .to(
           speedRef,
           {
-            current: 2.8,
+            current: 3.5,
           },
           0,
         )
