@@ -135,7 +135,7 @@ export function HeroScene() {
             opacity: 1,
             filter: "blur(0px)",
           },
-          0.32,
+          0.24,
         )
         .to(
           ".content-grid",
