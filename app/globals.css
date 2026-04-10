@@ -156,28 +156,31 @@ a {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: min(820px, calc(100% - 20vw));
+  width: min(920px, calc(100% - 16vw));
   transform: translate(-50%, -50%);
   display: grid;
-  grid-template-columns: minmax(16rem, 20rem) minmax(16rem, 20rem);
+  grid-template-columns: minmax(18rem, 1fr) minmax(18rem, 1fr);
   justify-content: center;
-  gap: clamp(1rem, 2vw, 1.6rem);
-  align-items: center;
+  gap: clamp(1.4rem, 2.4vw, 2.4rem);
+  align-items: stretch;
   z-index: 14;
 }
 
 .content-card {
   width: 100%;
-  max-width: 22rem;
-  min-height: clamp(14rem, 20vh, 16rem);
+  max-width: 24rem;
+  min-height: clamp(16rem, 22vh, 18rem);
+  height: 100%;
   padding: clamp(1.2rem, 1.8vw, 1.6rem);
   border: 1px solid rgba(214, 226, 255, 0.22);
   border-radius: 1.2rem;
   background: linear-gradient(180deg, rgba(18, 23, 29, 0.88), rgba(8, 10, 13, 0.76));
   backdrop-filter: blur(10px);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
-  display: grid;
-  align-content: end;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
   will-change: transform, opacity, filter;
 }
 
@@ -209,14 +212,14 @@ a {
 .card-left {
   justify-self: start;
   transform-origin: 100% 50%;
-  transform: translate3d(-1.6vw, 0, -320px) rotateY(44deg) scale(0.66);
+  transform: translate3d(-1.2vw, 0, -300px) rotateY(36deg) scale(0.7);
   filter: blur(6px);
 }
 
 .card-right {
   justify-self: end;
   transform-origin: 0% 50%;
-  transform: translate3d(1.6vw, 0, -320px) rotateY(-44deg) scale(0.66);
+  transform: translate3d(1.2vw, 0, -300px) rotateY(-36deg) scale(0.7);
   filter: blur(6px);
 }
 
