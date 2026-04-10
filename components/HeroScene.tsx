@@ -66,30 +66,9 @@ export function HeroScene() {
         },
       });
 
+      // 1. Magnetic Titles
       timeline
-        .to(
-          ".hero-stage",
-          {
-            scale: 1.2,
-            y: "-6vh",
-            z: 220,
-          },
-          0,
-        )
-        .to(
-          ".hero-vignette",
-          {
-            opacity: 0.88,
-          },
-          0,
-        )
-        .to(
-          ".hero-rain-layer",
-          {
-            scale: 1.12,
-          },
-          0,
-        )
+        .to({}, { duration: 0.12 }) // Small delay/magnetic hold before split
         .to(
           ".hero-title-left",
           {
@@ -98,7 +77,7 @@ export function HeroScene() {
             opacity: 0,
             filter: "blur(18px)",
           },
-          0.08,
+          0.12,
         )
         .to(
           ".hero-title-right",
@@ -137,6 +116,8 @@ export function HeroScene() {
           },
           0.24,
         )
+        // Micro-pause/magnetic hold before the cards finalize
+        .to({}, { duration: 0.08 }) 
         .to(
           ".content-grid",
           {
@@ -191,8 +172,31 @@ export function HeroScene() {
                       <article
                         key={panel.title}
                         className={`content-card ${panel.align === "left" ? "card-left" : "card-right"}`}
+                        onMouseMove={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const x = (e.clientX - rect.left) / rect.width - 0.5;
+                          const y = (e.clientY - rect.top) / rect.height - 0.5;
+                          const baseRotation = panel.align === "left" ? 12 : -12;
+                          gsap.to(e.currentTarget, {
+                            rotateX: -y * 12,
+                            rotateY: baseRotation + x * 12,
+                            duration: 0.4,
+                            ease: "power2.out",
+                            overwrite: "auto"
+                          });
+                        }}
+                        onMouseLeave={(e) => {
+                          const baseRotation = panel.align === "left" ? 12 : -12;
+                          gsap.to(e.currentTarget, {
+                            rotateX: 0,
+                            rotateY: baseRotation,
+                            duration: 0.6,
+                            ease: "elastic.out(1, 0.3)",
+                            overwrite: "auto"
+                          });
+                        }}
                       >
-                        <div className="card-content">
+                        <div className="card-inner">
                           <span className="content-eyebrow">{panel.eyebrow}</span>
                           <h2>{panel.title}</h2>
                           <p>{panel.text}</p>

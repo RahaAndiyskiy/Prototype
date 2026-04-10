@@ -190,6 +190,12 @@ a {
   flex-direction: column;
   justify-content: space-between;
   will-change: transform, opacity, filter;
+  transform-style: preserve-3d;
+}
+
+.card-inner {
+  pointer-events: none;
+  transform-style: preserve-3d;
 }
 
 .card-left {
