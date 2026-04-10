@@ -50,9 +50,11 @@ a {
   min-height: 100vh;
   perspective: 1000px;
   perspective-origin: 50% 50%;
-  transform-style: preserve-3d;
   overflow: hidden;
   width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hero-stage {
@@ -61,12 +63,8 @@ a {
   width: 100vw;
   overflow: hidden;
   transform-style: preserve-3d;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2.4rem;
-  padding: 4vh 6vw;
+  display: grid;
+  place-items: center;
 }
 
 #smooth-wrapper {
@@ -126,8 +124,7 @@ a {
   justify-items: center;
   text-align: center;
   align-self: center;
-  transform: none;
-  margin-bottom: 1.6rem;
+  translate: 0 -12vh;
 }
 
 .hero-kicker {
@@ -158,21 +155,23 @@ a {
 }
 
 .content-grid {
-  position: relative;
-  width: min(920px, calc(100% - 16vw));
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(1000px, 92vw);
+  transform: translate(-50%, -50%);
   display: grid;
-  grid-template-columns: minmax(18rem, 1fr) minmax(18rem, 1fr);
-  gap: clamp(1.4rem, 2.4vw, 2.4rem);
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
   align-items: center;
+  transform-style: preserve-3d;
   z-index: 14;
-  margin: 0 auto;
 }
 
 .content-card {
   width: 100%;
   max-width: 24rem;
   min-height: clamp(16rem, 22vh, 18rem);
-  height: 100%;
   padding: clamp(1.2rem, 1.8vw, 1.6rem);
   border: 1px solid rgba(214, 226, 255, 0.22);
   border-radius: 1.2rem;
@@ -182,7 +181,6 @@ a {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  align-items: stretch;
   will-change: transform, opacity, filter;
 }
 
@@ -212,17 +210,13 @@ a {
 }
 
 .card-left {
-  justify-self: start;
-  transform-origin: 100% 50%;
-  transform: translateX(-120px) translateZ(-120px) rotateY(25deg) scale(0.8);
+  transform: translateX(-120px) rotateY(25deg) scale(0.8);
   opacity: 0.6;
   filter: blur(6px);
 }
 
 .card-right {
-  justify-self: end;
-  transform-origin: 0% 50%;
-  transform: translateX(120px) translateZ(-120px) rotateY(-25deg) scale(0.8);
+  transform: translateX(120px) rotateY(-25deg) scale(0.8);
   opacity: 0.6;
   filter: blur(6px);
 }

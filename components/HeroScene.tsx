@@ -47,25 +47,9 @@ export function HeroScene() {
       });
 
       gsap.set(".content-card", {
-        opacity: 0.6,
+        opacity: 0,
         filter: "blur(6px)",
-      });
-
-      // explicit initial transforms for corridor perspective
-      gsap.set(".card-left", {
-        x: -120,
-        z: -120,
-        rotateY: 25,
-        scale: 0.8,
-        opacity: 0.6,
-      });
-
-      gsap.set(".card-right", {
-        x: 120,
-        z: -120,
-        rotateY: -25,
-        scale: 0.8,
-        opacity: 0.6,
+        y: 40,
       });
 
       const timeline = gsap.timeline({
@@ -87,6 +71,7 @@ export function HeroScene() {
           ".hero-stage",
           {
             scale: 1.2,
+            y: "-6vh",
             z: 220,
           },
           0,
@@ -135,26 +120,20 @@ export function HeroScene() {
         .to(
           ".card-left",
           {
-            x: 0,
-            z: 0,
-            rotateY: 0,
             scale: 1,
+            rotateY: 0,
+            x: 0,
             opacity: 1,
-            filter: "blur(0px)",
-            ease: "power1.out",
           },
           0.24,
         )
         .to(
           ".card-right",
           {
-            x: 0,
-            z: 0,
-            rotateY: 0,
             scale: 1,
+            rotateY: 0,
+            x: 0,
             opacity: 1,
-            filter: "blur(0px)",
-            ease: "power1.out",
           },
           0.24,
         )
