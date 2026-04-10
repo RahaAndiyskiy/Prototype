@@ -48,6 +48,8 @@ export function HeroScene() {
 
       gsap.set(".content-card", {
         opacity: 0,
+        filter: "blur(6px)",
+        y: 40,
       });
 
       const timeline = gsap.timeline({
@@ -121,8 +123,6 @@ export function HeroScene() {
             scale: 1,
             rotateY: 11,
             xPercent: 0,
-            opacity: 1,
-            filter: "blur(0px)",
           },
           0.24,
         )
@@ -132,8 +132,6 @@ export function HeroScene() {
             scale: 1,
             rotateY: -11,
             xPercent: 0,
-            opacity: 1,
-            filter: "blur(0px)",
           },
           0.24,
         )
@@ -146,6 +144,26 @@ export function HeroScene() {
           0.24,
         );
     });
+
+      // Individual scroll-triggered sharpening for each content card
+      gsap.utils.toArray(".content-card").forEach((card) => {
+        gsap.fromTo(
+          card,
+          { filter: "blur(6px)", opacity: 0, y: 40 },
+          {
+            filter: "blur(0px)",
+            opacity: 1,
+            y: 0,
+            ease: "power1.out",
+            scrollTrigger: {
+              trigger: card,
+              start: "top 70%",
+              end: "top 50%",
+              scrub: 0.35,
+            },
+          },
+        );
+      });
 
     return () => {
       smootherRef.current?.kill();
