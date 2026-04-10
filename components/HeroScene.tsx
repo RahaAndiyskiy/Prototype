@@ -121,8 +121,8 @@ export function HeroScene() {
           ".card-left",
           {
             scale: 1,
-            rotateY: 0,
-            x: 0,
+            rotateY: 12,
+            z: 40,
             opacity: 1,
           },
           0.24,
@@ -131,8 +131,8 @@ export function HeroScene() {
           ".card-right",
           {
             scale: 1,
-            rotateY: 0,
-            x: 0,
+            rotateY: -12,
+            z: 40,
             opacity: 1,
           },
           0.24,
@@ -185,17 +185,21 @@ export function HeroScene() {
                   </h1>
                 </header>
 
-                <div className="content-grid">
-                  {panels.map((panel) => (
-                    <article
-                      key={panel.title}
-                      className={`content-card ${panel.align === "left" ? "card-left" : "card-right"}`}
-                    >
-                      <span className="content-eyebrow">{panel.eyebrow}</span>
-                      <h2>{panel.title}</h2>
-                      <p>{panel.text}</p>
-                    </article>
-                  ))}
+                <div className="scene">
+                  <div className="scene-inner">
+                    {panels.map((panel) => (
+                      <article
+                        key={panel.title}
+                        className={`content-card ${panel.align === "left" ? "card-left" : "card-right"}`}
+                      >
+                        <div className="card-content">
+                          <span className="content-eyebrow">{panel.eyebrow}</span>
+                          <h2>{panel.title}</h2>
+                          <p>{panel.text}</p>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

@@ -154,25 +154,33 @@ a {
   will-change: transform, opacity, filter;
 }
 
-.content-grid {
+.scene {
+  perspective: 1000px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(1000px, 92vw);
-  transform: translate(-50%, -50%);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 60px;
+  inset: 0;
+  z-index: 14;
+  transform: translateY(60px);
+}
+
+.scene-inner {
+  display: flex;
+  width: min(840px, 92vw);
+  justify-content: center;
+  gap: 30px;
   align-items: center;
   transform-style: preserve-3d;
-  z-index: 14;
 }
 
 .content-card {
   width: 100%;
   max-width: 24rem;
-  min-height: clamp(16rem, 22vh, 18rem);
-  padding: clamp(1.2rem, 1.8vw, 1.6rem);
+  min-height: clamp(16rem, 24vh, 20rem);
+  padding: clamp(1.4rem, 2vw, 2.1rem);
   border: 1px solid rgba(214, 226, 255, 0.22);
   border-radius: 1.2rem;
   background: linear-gradient(180deg, rgba(18, 23, 29, 0.88), rgba(8, 10, 13, 0.76));
@@ -182,6 +190,20 @@ a {
   flex-direction: column;
   justify-content: space-between;
   will-change: transform, opacity, filter;
+}
+
+.card-left {
+  transform: rotateY(25deg) translateZ(-120px) scale(0.85);
+  transform-origin: right center;
+  opacity: 0.6;
+  filter: blur(4px);
+}
+
+.card-right {
+  transform: rotateY(-25deg) translateZ(-120px) scale(0.85);
+  transform-origin: left center;
+  opacity: 0.6;
+  filter: blur(4px);
 }
 
 .content-card h2 {
@@ -207,18 +229,6 @@ a {
   text-transform: uppercase;
   letter-spacing: 0.28em;
   color: var(--accent);
-}
-
-.card-left {
-  transform: translateX(-120px) rotateY(25deg) scale(0.8);
-  opacity: 0.6;
-  filter: blur(6px);
-}
-
-.card-right {
-  transform: translateX(120px) rotateY(-25deg) scale(0.8);
-  opacity: 0.6;
-  filter: blur(6px);
 }
 
 @media (max-width: 900px) {
