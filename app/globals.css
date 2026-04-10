@@ -15,18 +15,17 @@
 }
 
 html,
-body {
+body,
+#__next {
   margin: 0;
   min-height: 100%;
+  width: 100vw;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 50% 35%, rgba(67, 85, 119, 0.18), transparent 28%),
     linear-gradient(180deg, #050607 0%, #030405 55%, #080b0e 100%);
   color: var(--text);
   font-family: Georgia, "Times New Roman", serif;
-}
-
-body {
-  overflow-x: hidden;
 }
 
 a {
@@ -37,43 +36,68 @@ a {
   background:
     radial-gradient(circle at top, rgba(255, 255, 255, 0.04), transparent 30%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent 18%);
+  width: 100vw;
+  position: relative;
 }
 
 .hero-shell {
   position: relative;
   min-height: 100vh;
+  width: 100vw;
 }
 
 .hero-perspective {
   min-height: 100vh;
   perspective: 1600px;
   perspective-origin: 50% 50%;
-  overflow: clip;
+  overflow: hidden;
+  width: 100vw;
 }
 
 .hero-stage {
   position: relative;
   min-height: 100vh;
+  width: 100vw;
+  overflow: hidden;
   transform-style: preserve-3d;
   display: grid;
   place-items: center;
   padding: 6vh 6vw;
 }
 
+#smooth-wrapper {
+  height: 100vh;
+  width: 100vw;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#smooth-content {
+  /* allow content to determine height for ScrollSmoother */
+  min-height: 100vh;
+}
+
 .hero-rain-layer,
 .rain-canvas,
 .hero-vignette {
   position: absolute;
-  inset: 0;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
 }
 
 .hero-rain-layer {
   transform-origin: 50% 50%;
+  z-index: 0;
 }
 
 .rain-canvas {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
 }
 
 .hero-vignette {
@@ -82,12 +106,13 @@ a {
     linear-gradient(180deg, rgba(4, 5, 6, 0.26), rgba(4, 5, 6, 0.68));
   opacity: 0.72;
   pointer-events: none;
+  z-index: 6;
 }
 
 .hero-copy,
 .content-grid {
   position: relative;
-  z-index: 1;
+  z-index: 12;
   transform-style: preserve-3d;
 }
 
@@ -138,6 +163,7 @@ a {
   justify-content: space-between;
   gap: clamp(3rem, 7vw, 8rem);
   align-items: center;
+  z-index: 14;
 }
 
 .content-card {
