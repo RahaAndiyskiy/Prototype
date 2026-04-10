@@ -143,28 +143,19 @@ export function HeroScene() {
           },
           0.24,
         );
-    });
-
-      // Individual scroll-triggered sharpening for each content card
-      gsap.utils.toArray(".content-card").forEach((card) => {
-        gsap.fromTo(
-          card,
-          { filter: "blur(6px)", opacity: 0, y: 40 },
+        // crossfade blur: cards sharpen as title dissolves
+        .to(
+          ".content-card",
           {
             filter: "blur(0px)",
             opacity: 1,
             y: 0,
             ease: "power1.out",
-            scrollTrigger: {
-              trigger: card,
-              start: "top 70%",
-              end: "top 50%",
-              scrub: 0.35,
-            },
+            stagger: { each: 0.06, from: "center" },
           },
+          0.28,
         );
-      });
-
+    });
     return () => {
       smootherRef.current?.kill();
       smootherRef.current = null;
