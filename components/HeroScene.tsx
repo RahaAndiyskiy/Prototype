@@ -9,6 +9,9 @@ import { RainCanvas } from "@/components/RainCanvas";
 
 gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
 
+const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
 const panels = [
   {
     eyebrow: "Trajectory",
@@ -29,6 +32,7 @@ export function HeroScene() {
   const smootherRef = useRef<ScrollSmoother | null>(null);
 
   useEffect(() => {
+    let applySplit: () => void = () => {};
     const ctx = gsap.context(() => {
       smootherRef.current = ScrollSmoother.create({
         wrapper: "#smooth-wrapper",
@@ -67,7 +71,7 @@ export function HeroScene() {
           trigger: ".hero-shell",
           start: "top top",
           end: "+=160%", // Increase end for longer travel feeling
-          scrub: 0.8,    // Slower scrub for more "weight"
+          scrub: true,    // continuous scrub for a more immediate forward feel
           pin: true,
           anticipatePin: 1,
         },
@@ -86,28 +90,14 @@ export function HeroScene() {
           0,
         )
         .to(
-          ".hero-title-left",
+          ".hero-stage",
           {
-            xPercent: -80,
-            rotateY: 70,
-            z: 800, // Make titles "fly" past the viewer
-            opacity: 0,
-            filter: "blur(20px)",
-            duration: 1,
+            scale: 1.3,
+            y: -40,
+            ease: "none",
+            duration: 1.6, // extend so scale/translate persist longer during scroll
           },
-          0.1,
-        )
-        .to(
-          ".hero-title-right",
-          {
-            xPercent: 80,
-            rotateY: -70,
-            z: 800,
-            opacity: 0,
-            filter: "blur(20px)",
-            duration: 1,
-          },
-          0.05,
+          0,
         )
         .to(
           speedRef,
@@ -152,8 +142,59 @@ export function HeroScene() {
           },
           0.6,
         );
+
+      // --- Smoothed split progress for the title ---
+      // Keep the ScrollTrigger / scrub but smooth the progress used specifically
+      // for the split so a sudden scroll won't instantly snap the titles away.
+      const st = timeline.scrollTrigger as any;
+      let targetProgress = 0;
+      let smoothProgress = 0;
+      const LERP = 0.08; // smoothing factor
+      const MAX_DELTA = 0.03; // max change per tick
+      // Map the overall scroll progress into the split segment (early in the timeline)
+      const SPLIT_START = 0.05;
+      const SPLIT_END = 0.18;
+
+      applySplit = () => {
+        const raw = st?.progress ?? 0;
+        targetProgress = raw;
+        let delta = (targetProgress - smoothProgress) * LERP;
+        if (delta > MAX_DELTA) delta = MAX_DELTA;
+        if (delta < -MAX_DELTA) delta = -MAX_DELTA;
+        smoothProgress += delta;
+
+        const t = clamp((smoothProgress - SPLIT_START) / (SPLIT_END - SPLIT_START), 0, 1);
+
+        // interpolate values
+        const leftX = lerp(0, -200, t);
+        const leftRY = lerp(0, 25, t);
+        const leftA = lerp(1, 0, t);
+        const leftBlur = lerp(0, 6, t);
+
+        const rightX = lerp(0, 200, t);
+        const rightRY = lerp(0, -25, t);
+        const rightA = lerp(1, 0, t);
+        const rightBlur = lerp(0, 6, t);
+
+        gsap.set(".hero-title-left", {
+          x: leftX,
+          rotateY: leftRY,
+          opacity: leftA,
+          filter: `blur(${leftBlur}px)`,
+        });
+
+        gsap.set(".hero-title-right", {
+          x: rightX,
+          rotateY: rightRY,
+          opacity: rightA,
+          filter: `blur(${rightBlur}px)`,
+        });
+      };
+
+      gsap.ticker.add(applySplit);
     });
     return () => {
+      gsap.ticker.remove(applySplit);
       smootherRef.current?.kill();
       smootherRef.current = null;
       ctx.revert();
@@ -191,22 +232,24 @@ export function HeroScene() {
                           const x = (e.clientX - rect.left) / rect.width - 0.5;
                           const y = (e.clientY - rect.top) / rect.height - 0.5;
                           const baseRotation = panel.align === "left" ? 12 : -12;
+                          // smoother, less aggressive response: smaller multiplier + longer duration
                           gsap.to(e.currentTarget, {
-                            rotateX: -y * 12,
-                            rotateY: baseRotation + x * 12,
-                            duration: 0.4,
-                            ease: "power2.out",
-                            overwrite: "auto"
+                            rotateX: -y * 8,
+                            rotateY: baseRotation + x * 8,
+                            duration: 1.2,
+                            ease: "power3.out",
+                            overwrite: "auto",
                           });
                         }}
                         onMouseLeave={(e) => {
                           const baseRotation = panel.align === "left" ? 12 : -12;
+                          // smooth return without elastic bounce
                           gsap.to(e.currentTarget, {
                             rotateX: 0,
                             rotateY: baseRotation,
-                            duration: 0.6,
-                            ease: "elastic.out(1, 0.3)",
-                            overwrite: "auto"
+                            duration: 1.0,
+                            ease: "power2.out",
+                            overwrite: "auto",
                           });
                         }}
                       >

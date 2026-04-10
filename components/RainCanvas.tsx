@@ -20,22 +20,64 @@ type Drop = {
   angle: number;
   ox: number; // tail offset x (precomputed)
   oy: number; // tail offset y (precomputed)
+  layer: "far" | "mid" | "near";
+};
+
+type Impact = {
+  active: boolean;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  len: number;
+  width: number;
+  alpha: number;
 };
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 export function RainCanvas({ speedRef }: RainCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const bgCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const dropsRef = useRef<Drop[]>([]);
   const rafRef = useRef<number | null>(null);
   const scrollRef = useRef(0);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const bgCanvas = bgCanvasRef.current;
+    if (!bgCanvas) return;
+
+    // Ensure we have a foreground canvas appended to <body> so it can
+    // reliably sit above the page content (avoid ancestor transform stacking contexts).
+    let fgCanvas = fgCanvasRef.current;
+    let createdFg = false;
+    if (!fgCanvas) {
+      fgCanvas = document.createElement("canvas");
+      fgCanvas.setAttribute("aria-hidden", "true");
+      Object.assign(fgCanvas.style, {
+        position: "fixed",
+        top: "0",
+        left: "0",
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+        zIndex: "9999",
+      });
+      document.body.appendChild(fgCanvas);
+      fgCanvasRef.current = fgCanvas;
+      createdFg = true;
+    }
+
+    const bgCtx = bgCanvas.getContext("2d");
+    const fgCtx = fgCanvas.getContext("2d");
+    if (!bgCtx || !fgCtx) {
+      if (createdFg && fgCanvas && fgCanvas.parentNode) {
+        fgCanvas.parentNode.removeChild(fgCanvas);
+        fgCanvasRef.current = null;
+      }
+      return;
+    }
 
     // Config
     const BASE_DROPS = 240; // reduced base count
@@ -53,24 +95,63 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
       dpr = Math.min(MAX_DPR, Math.max(1, window.devicePixelRatio || 1));
       w = window.innerWidth;
       h = window.innerHeight;
-      canvas.width = Math.floor(w * dpr);
-      canvas.height = Math.floor(h * dpr);
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      bgCanvas.width = Math.floor(w * dpr);
+      bgCanvas.height = Math.floor(h * dpr);
+      bgCanvas.style.width = `${w}px`;
+      bgCanvas.style.height = `${h}px`;
+      bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      if (fgCanvas) {
+        fgCanvas.width = Math.floor(w * dpr);
+        fgCanvas.height = Math.floor(h * dpr);
+        fgCanvas.style.width = `${w}px`;
+        fgCanvas.style.height = `${h}px`;
+        fgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
     };
 
     setSize();
     window.addEventListener("resize", setSize);
 
-    // Pre-allocate drops (avoid allocating during animation)
-    const drops: Drop[] = new Array(MAX_DROPS).fill(null).map(() => {
+    // Pre-allocate drops into three layer pools (far / mid / near)
+    const FAR_POOL = Math.round(MAX_DROPS * 0.6);
+    const MID_POOL = Math.round(MAX_DROPS * 0.3);
+    const NEAR_POOL = Math.max(1, MAX_DROPS - FAR_POOL - MID_POOL);
+
+    const createLayerDrop = (layer: "far" | "mid" | "near") => {
       const z = Math.random();
-      const angle = ((BASE_ANGLE + (Math.random() - 0.5) * 4) * Math.PI) / 180;
-      const len = lerp(8, 110, z);
-      const speed = lerp(320, 1400, z);
+      // layer-specific angle and speed ranges
+      let angleDeg = BASE_ANGLE;
+      let len = lerp(8, 110, z);
+      let speed = lerp(320, 1400, z);
+      let width = lerp(0.12, 1.0, z);
+      let alpha = lerp(0.02, 0.22, z);
+
+      if (layer === "far") {
+        angleDeg = 5 + (Math.random() - 0.5) * 2; // ~5deg
+        speed = lerp(180, 520, z); // slower
+        len = lerp(6, 80, z);
+        width = lerp(0.06, 0.28, z);
+        alpha = lerp(0.01, 0.08, z);
+      } else if (layer === "mid") {
+        angleDeg = BASE_ANGLE + (Math.random() - 0.5) * 3; // current feel
+        speed = lerp(320, 1000, z);
+        len = lerp(10, 110, z);
+        width = lerp(0.12, 1.0, z);
+        alpha = lerp(0.02, 0.22, z);
+      } else {
+        // near
+        angleDeg = 10 + (Math.random() - 0.5) * 3; // ~10-12deg
+        speed = lerp(520, 1600, z); // faster
+        len = lerp(18, 140, z);
+        width = lerp(0.18, 1.4, z);
+        alpha = lerp(0.06, 0.35, z);
+      }
+
+      const angle = (angleDeg * Math.PI) / 180;
       const vx = Math.sin(angle) * speed;
       const vy = Math.cos(angle) * speed;
+
       return {
         x: Math.random() * (w + 400) - 200,
         y: Math.random() * h,
@@ -79,15 +160,22 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
         speed,
         vx,
         vy,
-        width: lerp(0.12, 1.0, z), // much thinner
-        alpha: lerp(0.02, 0.22, z), // dimmer, no bright glow
-        shadow: 0, // disable shadows for perf
+        width,
+        alpha,
+        shadow: 0,
         angle,
         ox: -Math.sin(angle) * len,
         oy: -Math.cos(angle) * len,
+        layer,
       } as Drop;
-    });
-    dropsRef.current = drops;
+    };
+
+    const farDrops: Drop[] = new Array(FAR_POOL).fill(null).map(() => createLayerDrop("far"));
+    const midDrops: Drop[] = new Array(MID_POOL).fill(null).map(() => createLayerDrop("mid"));
+    const nearDrops: Drop[] = new Array(NEAR_POOL).fill(null).map(() => createLayerDrop("near"));
+    dropsRef.current = [...farDrops, ...midDrops, ...nearDrops];
+
+    // impact drops removed — near-layer only drawn as regular drops
 
     // Wind (small lateral movement) — will drift slowly
     let wind = (Math.random() - 0.5) * 40;
@@ -102,8 +190,10 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
 
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    bgCtx.lineCap = "round";
+    bgCtx.lineJoin = "round";
+    fgCtx.lineCap = "round";
+    fgCtx.lineJoin = "round";
 
     // Perf tracking (ring buffer)
     const perfBuf = new Array(PERF_SAMPLES).fill(0);
@@ -115,21 +205,20 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
     let activeCount = BASE_DROPS;
 
     const resetDrop = (drop: Drop, spawnTop = true) => {
-      const z = Math.random();
-      const angle = ((BASE_ANGLE + (Math.random() - 0.5) * 4) * Math.PI) / 180;
-      const len = lerp(8, 110, z);
-      const speed = lerp(320, 1400, z);
-      drop.z = z;
-      drop.angle = angle;
-      drop.speed = speed;
-      drop.vx = Math.sin(angle) * speed;
-      drop.vy = Math.cos(angle) * speed;
-      drop.len = len;
-      drop.width = lerp(0.12, 1.0, z);
-      drop.alpha = lerp(0.02, 0.22, z);
-      drop.shadow = 0;
-      drop.ox = -Math.sin(angle) * len;
-      drop.oy = -Math.cos(angle) * len;
+      // Recreate properties matching the drop's layer
+      const layer = drop.layer || "mid";
+      const template = createLayerDrop(layer);
+      drop.z = template.z;
+      drop.len = template.len;
+      drop.speed = template.speed;
+      drop.vx = template.vx;
+      drop.vy = template.vy;
+      drop.width = template.width;
+      drop.alpha = template.alpha;
+      drop.shadow = template.shadow;
+      drop.angle = template.angle;
+      drop.ox = template.ox;
+      drop.oy = template.oy;
       drop.x = Math.random() * (w + 400) - 200;
       drop.y = spawnTop ? -Math.random() * (h * 0.35) - drop.len : Math.random() * h;
     };
@@ -156,53 +245,100 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
       const avgFps = avgDt > 0 ? 1 / avgDt : 60;
       const perfScale = clamp(avgFps / 55, 0.35, 1); // <1 when FPS drops
 
-      // stronger fade to quickly remove trails and reduce visible brightness
+      // background canvas: fade previous frame so the underlying page shows through
       const fadeAlpha = 0.18;
-      ctx.fillStyle = `rgba(0,0,0,${fadeAlpha})`;
-      ctx.fillRect(0, 0, w, h);
+      bgCtx.globalCompositeOperation = "destination-out";
+      bgCtx.fillStyle = `rgba(0,0,0,${fadeAlpha})`;
+      bgCtx.fillRect(0, 0, w, h);
+      bgCtx.globalCompositeOperation = "source-over";
+
+      // foreground canvas: clear each frame so overlay does not darken content
+      fgCtx.clearRect(0, 0, w, h);
 
       // adjust density with scroll (no allocations)
-      const densityMult = 1 + scrollRef.current * 0.2;
+      const densityMult = 1 + scrollRef.current * 0.18;
       activeCount = clamp(Math.round(BASE_DROPS * densityMult * perfScale), MIN_DROPS, MAX_DROPS);
 
-      // speed multiplier: fixed local multiplier (ignore external speedRef)
-      const globalSpeedMult = (0.7 + perfScale * 0.3);
+      // speed multiplier: small scroll-based boost (~+10% max)
+      const scrollSpeedBoost = 1 + scrollRef.current * 0.10;
+      const globalSpeedMult = (0.7 + perfScale * 0.3) * scrollSpeedBoost;
 
       // no additive glow — use source-over
-      ctx.globalCompositeOperation = "source-over";
+      bgCtx.globalCompositeOperation = "source-over";
+      fgCtx.globalCompositeOperation = "source-over";
 
-      // cache often-used values
-      const dropsLocal = dropsRef.current;
+      // decide per-layer counts (ratios)
+      const totalDesired = activeCount;
+      const farDraw = clamp(Math.round(totalDesired * 0.6), 0, farDrops.length);
+      const midDraw = clamp(Math.round(totalDesired * 0.3), 0, midDrops.length);
+      let nearDraw = totalDesired - farDraw - midDraw;
+      if (nearDraw < 0) nearDraw = 0;
+      nearDraw = Math.min(nearDraw, nearDrops.length);
+
       const windLocal = wind;
-      for (let i = 0; i < activeCount; i++) {
-        const d = dropsLocal[i];
 
-        // update position (px per second * dt)
+      // draw far layer (almost vertical, slow, faint) into background ctx
+      for (let i = 0; i < farDraw; i++) {
+        const d = farDrops[i];
         d.x += (d.vx + windLocal) * dt * globalSpeedMult;
         d.y += d.vy * dt * globalSpeedMult;
-
-        // if off-screen -> recycle
-        if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) {
-          resetDrop(d, true);
-        }
-
-        // draw streak from precomputed tail offset -> head
+        if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
         const tailX = d.x + d.ox;
         const tailY = d.y + d.oy;
-
-        ctx.lineWidth = d.width;
-        const alpha = clamp(d.alpha * (0.7 + scrollRef.current * 0.15) * perfScale, 0.01, 0.45);
-        ctx.globalAlpha = alpha;
-        ctx.strokeStyle = "#ffffff";
-
-        ctx.beginPath();
-        ctx.moveTo(tailX, tailY);
-        ctx.lineTo(d.x, d.y);
-        ctx.stroke();
+        bgCtx.lineWidth = d.width;
+        const alpha = clamp(d.alpha * (0.7 + scrollRef.current * 0.12) * perfScale, 0.005, 0.18);
+        bgCtx.globalAlpha = alpha;
+        bgCtx.strokeStyle = "#ffffff";
+        bgCtx.beginPath();
+        bgCtx.moveTo(tailX, tailY);
+        bgCtx.lineTo(d.x, d.y);
+        bgCtx.stroke();
       }
 
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
+      // draw mid layer (main) into background ctx
+      for (let i = 0; i < midDraw; i++) {
+        const d = midDrops[i];
+        d.x += (d.vx + windLocal) * dt * globalSpeedMult;
+        d.y += d.vy * dt * globalSpeedMult;
+        if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
+        const tailX = d.x + d.ox;
+        const tailY = d.y + d.oy;
+        bgCtx.lineWidth = d.width;
+        const alpha = clamp(d.alpha * (0.75 + scrollRef.current * 0.15) * perfScale, 0.01, 0.35);
+        bgCtx.globalAlpha = alpha;
+        bgCtx.strokeStyle = "#ffffff";
+        bgCtx.beginPath();
+        bgCtx.moveTo(tailX, tailY);
+        bgCtx.lineTo(d.x, d.y);
+        bgCtx.stroke();
+      }
+
+      // draw near layer (sparse, faster, brighter) into foreground ctx (overlay)
+      for (let i = 0; i < nearDraw; i++) {
+        const d = nearDrops[i];
+        d.x += (d.vx + windLocal) * dt * globalSpeedMult;
+        d.y += d.vy * dt * globalSpeedMult;
+        if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
+        const tailX = d.x + d.ox;
+        const tailY = d.y + d.oy;
+        fgCtx.lineWidth = d.width;
+        const alpha = clamp(d.alpha * (0.9 + scrollRef.current * 0.2) * perfScale, 0.02, 0.55);
+        fgCtx.globalAlpha = alpha;
+        fgCtx.strokeStyle = "#ffffff";
+        fgCtx.beginPath();
+        fgCtx.moveTo(tailX, tailY);
+        fgCtx.lineTo(d.x, d.y);
+        fgCtx.stroke();
+      }
+
+      // impact drops removed — no special spawn logic
+
+      // impact drops removed — nothing to update here
+
+      bgCtx.globalAlpha = 1;
+      bgCtx.globalCompositeOperation = "source-over";
+      fgCtx.globalAlpha = 1;
+      fgCtx.globalCompositeOperation = "source-over";
 
       rafRef.current = requestAnimationFrame(render);
     };
@@ -213,12 +349,21 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
       window.removeEventListener("resize", setSize);
       window.removeEventListener("scroll", onScroll);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      // remove programmatically created foreground canvas if we added one
+      if (createdFg && fgCanvasRef.current && fgCanvasRef.current.parentNode) {
+        try {
+          fgCanvasRef.current.parentNode.removeChild(fgCanvasRef.current);
+        } catch (e) {
+          /* ignore */
+        }
+        fgCanvasRef.current = null;
+      }
     };
   }, [speedRef]);
 
   return (
     <canvas
-      ref={canvasRef}
+      ref={bgCanvasRef}
       aria-hidden="true"
       style={{
         position: "fixed",
@@ -227,7 +372,7 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
         width: "100%",
         height: "100%",
         pointerEvents: "none",
-        zIndex: -1,
+        zIndex: 1,
       }}
     />
   );
