@@ -48,8 +48,9 @@ a {
 
 .hero-perspective {
   min-height: 100vh;
-  perspective: 800px;
+  perspective: 1000px;
   perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
   overflow: hidden;
   width: 100vw;
 }
@@ -60,9 +61,12 @@ a {
   width: 100vw;
   overflow: hidden;
   transform-style: preserve-3d;
-  display: grid;
-  place-items: center;
-  padding: 6vh 6vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4rem;
+  padding: 4vh 6vw;
 }
 
 #smooth-wrapper {
@@ -122,7 +126,8 @@ a {
   justify-items: center;
   text-align: center;
   align-self: center;
-  translate: 0 -12vh;
+  transform: none;
+  margin-bottom: 1.6rem;
 }
 
 .hero-kicker {
@@ -153,17 +158,14 @@ a {
 }
 
 .content-grid {
-  position: absolute;
-  left: 50%;
-  top: 50%;
+  position: relative;
   width: min(920px, calc(100% - 16vw));
-  transform: translate(-50%, -50%);
   display: grid;
   grid-template-columns: minmax(18rem, 1fr) minmax(18rem, 1fr);
-  justify-content: center;
   gap: clamp(1.4rem, 2.4vw, 2.4rem);
-  align-items: stretch;
+  align-items: center;
   z-index: 14;
+  margin: 0 auto;
 }
 
 .content-card {
@@ -212,14 +214,16 @@ a {
 .card-left {
   justify-self: start;
   transform-origin: 100% 50%;
-  transform: translate3d(-1.2vw, 0, -300px) rotateY(36deg) scale(0.7);
+  transform: translateX(-120px) translateZ(-120px) rotateY(25deg) scale(0.8);
+  opacity: 0.6;
   filter: blur(6px);
 }
 
 .card-right {
   justify-self: end;
   transform-origin: 0% 50%;
-  transform: translate3d(1.2vw, 0, -300px) rotateY(-36deg) scale(0.7);
+  transform: translateX(120px) translateZ(-120px) rotateY(-25deg) scale(0.8);
+  opacity: 0.6;
   filter: blur(6px);
 }
 
