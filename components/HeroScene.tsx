@@ -33,7 +33,9 @@ export function HeroScene() {
   const rainAudioRef = useRef<HTMLAudioElement | null>(null);
   const thunderAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioEnabledRef = useRef(false);
+  const waveTimeoutRef = useRef<number | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [waveActive, setWaveActive] = useState(false);
 
   const enableAudioPlayback = () => {
     if (audioEnabledRef.current) return;
@@ -244,6 +246,9 @@ export function HeroScene() {
       thunderAudioRef.current?.pause();
       rainAudioRef.current = null;
       thunderAudioRef.current = null;
+      if (waveTimeoutRef.current) {
+        window.clearTimeout(waveTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -264,6 +269,14 @@ export function HeroScene() {
     } else {
       enableAudioPlayback();
     }
+    if (waveTimeoutRef.current) {
+      window.clearTimeout(waveTimeoutRef.current);
+    }
+    setWaveActive(true);
+    waveTimeoutRef.current = window.setTimeout(() => {
+      setWaveActive(false);
+      waveTimeoutRef.current = null;
+    }, 1200);
   };
 
   const updateSpotlight = (target: HTMLElement, clientX: number, clientY: number) => {
@@ -281,14 +294,21 @@ export function HeroScene() {
           <section className="hero-shell">
             <div className="hero-perspective">
               <div className="hero-stage">
-                <button
-                  className="audio-toggle"
-                  type="button"
-                  aria-pressed={audioEnabled}
-                  onClick={toggleAudioEnabled}
-                >
-                  {audioEnabled ? "Звук: ВКЛ" : "Звук: ВЫКЛ"}
-                </button>
+                <div className="audio-switch">
+                  <input
+                    id="audio-trigger"
+                    type="checkbox"
+                    checked={audioEnabled}
+                    onChange={toggleAudioEnabled}
+                    className="audio-trigger-input"
+                  />
+                  <label htmlFor="audio-trigger" className="trigger" aria-label={audioEnabled ? "Звук включён" : "Звук выключён"} />
+                  <div className={`dots ${waveActive ? "wave-active" : ""}`}>
+                    <span className="dot" />
+                    <span className="dot" />
+                    <span className="dot" />
+                  </div>
+                </div>
                 <div className="hero-rain-layer">
                   <RainCanvas speedRef={speedRef} onThunder={playThunder} />
                 </div>

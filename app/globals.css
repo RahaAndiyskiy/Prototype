@@ -40,31 +40,103 @@ a {
   position: relative;
 }
 
-.audio-toggle {
+.audio-switch {
   position: absolute;
   top: 1rem;
-  left: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 20;
-  min-width: 8.5rem;
-  padding: 0.55rem 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 0.55rem;
-  background: rgba(8, 9, 11, 0.88);
-  color: rgba(244, 247, 255, 0.9);
-  backdrop-filter: blur(12px);
-  font-family: Inter, "Segoe UI", sans-serif;
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+  width: 5.2rem;
+  height: 5.2rem;
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
 }
 
-.audio-toggle:hover,
-.audio-toggle:focus-visible {
-  background: rgba(13, 14, 16, 0.96);
-  border-color: rgba(255, 255, 255, 0.18);
-  transform: translateY(-1px);
+.audio-trigger-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.trigger {
+  position: relative;
+  width: 5.2rem;
+  height: 5.2rem;
+  border-radius: 50%;
+  background: rgba(12, 14, 18, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.38), -4px -4px 12px rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  text-transform: uppercase;
+  color: rgba(244, 247, 255, 0.88);
+  font-family: Inter, "Segoe UI", sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+}
+
+.trigger:before {
+  content: 'sound';
+}
+
+#audio-trigger:checked + .trigger:before {
+  content: 'mute';
+}
+
+.dots {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.dot {
+  transform: translate3d(-50%, -50%, 0);
+}
+
+.dots > .dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5.2rem;
+  height: 5.2rem;
+  background: rgba(9, 11, 13, 0.92);
+  border-radius: 50%;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.35), -5px -5px 15px rgba(255, 255, 255, 0.05);
+  opacity: 1;
+  transform: translate3d(-50%, -50%, 0) scale3d(0, 0, 1);
+}
+
+.wave-active > .dot {
+  animation-name: wave;
+  animation-timing-function: ease-in-out;
+  animation-duration: 0.75s;
+  animation-fill-mode: forwards;
+}
+
+.dot:nth-of-type(2) {
+  z-index: 1;
+  animation-delay: 0.15s;
+}
+
+.dot:nth-of-type(3) {
+  z-index: 2;
+  animation-delay: 0.3s;
+}
+
+@keyframes wave {
+  0% {
+    opacity: 1;
+    transform: translate3d(-50%, -50%, 0) scale3d(1, 1, 1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-50%, -50%, 0) scale3d(4, 4, 1);
+  }
 }
 
 .hero-shell {
