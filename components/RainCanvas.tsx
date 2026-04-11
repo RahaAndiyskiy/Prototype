@@ -20,18 +20,14 @@ type Drop = {
   angle: number;
   ox: number; // tail offset x (precomputed)
   oy: number; // tail offset y (precomputed)
+  mx: number; // mid-point horizontal offset for imperfect streaks
+  my: number; // mid-point vertical offset for imperfect streaks
+  midRatio: number; // where along the line the bend occurs
+  alphaPhase: number;
+  alphaFreq: number;
+  widthPhase: number;
+  widthFreq: number;
   layer: "far" | "mid" | "near";
-};
-
-type Impact = {
-  active: boolean;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  len: number;
-  width: number;
-  alpha: number;
 };
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -129,28 +125,38 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
 
       if (layer === "far") {
         angleDeg = 5 + (Math.random() - 0.5) * 2; // ~5deg
-        speed = lerp(180, 520, z); // slower
+        speed = lerp(120, 360, z); // much slower for stronger parallax
         len = lerp(6, 80, z);
-        width = lerp(0.06, 0.28, z);
-        alpha = lerp(0.01, 0.08, z);
+        width = lerp(0.06, 0.26, z);
+        alpha = lerp(0.008, 0.07, z);
       } else if (layer === "mid") {
         angleDeg = BASE_ANGLE + (Math.random() - 0.5) * 3; // current feel
-        speed = lerp(320, 1000, z);
+        speed = lerp(380, 980, z);
         len = lerp(10, 110, z);
         width = lerp(0.12, 1.0, z);
         alpha = lerp(0.02, 0.22, z);
       } else {
         // near
         angleDeg = 10 + (Math.random() - 0.5) * 3; // ~10-12deg
-        speed = lerp(520, 1600, z); // faster
-        len = lerp(18, 140, z);
-        width = lerp(0.18, 1.4, z);
-        alpha = lerp(0.06, 0.35, z);
+        speed = lerp(760, 2300, z); // much faster for near parallax burst
+        len = lerp(18, 150, z);
+        width = lerp(0.18, 1.5, z);
+        alpha = lerp(0.06, 0.42, z);
       }
 
       const angle = (angleDeg * Math.PI) / 180;
       const vx = Math.sin(angle) * speed;
       const vy = Math.cos(angle) * speed;
+      const perpX = Math.cos(angle);
+      const perpY = -Math.sin(angle);
+      const wobble = (Math.random() - 0.5) * (layer === "near" ? 28 : layer === "mid" ? 16 : 8);
+      const mx = perpX * wobble;
+      const my = perpY * wobble;
+      const midRatio = 0.32 + Math.random() * 0.24;
+      const alphaPhase = Math.random() * Math.PI * 2;
+      const alphaFreq = 1.0 + Math.random() * 1.4;
+      const widthPhase = Math.random() * Math.PI * 2;
+      const widthFreq = 0.8 + Math.random() * 1.2;
 
       return {
         x: Math.random() * (w + 400) - 200,
@@ -166,6 +172,13 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
         angle,
         ox: -Math.sin(angle) * len,
         oy: -Math.cos(angle) * len,
+        mx,
+        my,
+        midRatio,
+        alphaPhase,
+        alphaFreq,
+        widthPhase,
+        widthFreq,
         layer,
       } as Drop;
     };
@@ -219,6 +232,13 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
       drop.angle = template.angle;
       drop.ox = template.ox;
       drop.oy = template.oy;
+      drop.mx = template.mx;
+      drop.my = template.my;
+      drop.midRatio = template.midRatio;
+      drop.alphaPhase = template.alphaPhase;
+      drop.alphaFreq = template.alphaFreq;
+      drop.widthPhase = template.widthPhase;
+      drop.widthFreq = template.widthFreq;
       drop.x = Math.random() * (w + 400) - 200;
       drop.y = spawnTop ? -Math.random() * (h * 0.35) - drop.len : Math.random() * h;
     };
@@ -259,9 +279,9 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
       const densityMult = 1 + scrollRef.current * 0.18;
       activeCount = clamp(Math.round(BASE_DROPS * densityMult * perfScale), MIN_DROPS, MAX_DROPS);
 
-      // speed multiplier: small scroll-based boost (~+10% max)
-      const scrollSpeedBoost = 1 + scrollRef.current * 0.10;
-      const globalSpeedMult = (0.7 + perfScale * 0.3) * scrollSpeedBoost;
+      // speed multiplier: small scroll-based boost (~+12% max)
+      const scrollSpeedBoost = 1 + scrollRef.current * 0.12;
+      const globalSpeedMult = (0.75 + perfScale * 0.35) * scrollSpeedBoost;
 
       // no additive glow — use source-over
       bgCtx.globalCompositeOperation = "source-over";
@@ -276,6 +296,7 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
       nearDraw = Math.min(nearDraw, nearDrops.length);
 
       const windLocal = wind;
+      const t = now * 0.001;
 
       // draw far layer (almost vertical, slow, faint) into background ctx
       for (let i = 0; i < farDraw; i++) {
@@ -285,12 +306,24 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
         if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
         const tailX = d.x + d.ox;
         const tailY = d.y + d.oy;
-        bgCtx.lineWidth = d.width;
-        const alpha = clamp(d.alpha * (0.7 + scrollRef.current * 0.12) * perfScale, 0.005, 0.18);
-        bgCtx.globalAlpha = alpha;
+        const midX = tailX + (d.x - tailX) * d.midRatio + d.mx * 0.25;
+        const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.25;
+        const pulse = 0.92 + Math.sin(t * d.widthFreq + d.widthPhase) * 0.06;
+        const alphaPulse = 0.92 + Math.sin(t * d.alphaFreq + d.alphaPhase) * 0.08;
+        const baseAlpha = clamp(d.alpha * (0.7 + scrollRef.current * 0.12) * perfScale * alphaPulse, 0.005, 0.18);
         bgCtx.strokeStyle = "#ffffff";
+
+        bgCtx.lineWidth = d.width * 1.25 * pulse;
+        bgCtx.globalAlpha = baseAlpha * 0.22;
         bgCtx.beginPath();
         bgCtx.moveTo(tailX, tailY);
+        bgCtx.lineTo(midX, midY);
+        bgCtx.stroke();
+
+        bgCtx.lineWidth = d.width * 0.9 * pulse;
+        bgCtx.globalAlpha = clamp(baseAlpha * 1.08, 0, 0.3);
+        bgCtx.beginPath();
+        bgCtx.moveTo(midX, midY);
         bgCtx.lineTo(d.x, d.y);
         bgCtx.stroke();
       }
@@ -303,12 +336,24 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
         if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
         const tailX = d.x + d.ox;
         const tailY = d.y + d.oy;
-        bgCtx.lineWidth = d.width;
-        const alpha = clamp(d.alpha * (0.75 + scrollRef.current * 0.15) * perfScale, 0.01, 0.35);
-        bgCtx.globalAlpha = alpha;
+        const midX = tailX + (d.x - tailX) * d.midRatio + d.mx * 0.35;
+        const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.35;
+        const pulse = 0.9 + Math.sin(t * d.widthFreq + d.widthPhase) * 0.07;
+        const alphaPulse = 0.9 + Math.sin(t * d.alphaFreq + d.alphaPhase) * 0.08;
+        const baseAlpha = clamp(d.alpha * (0.75 + scrollRef.current * 0.15) * perfScale * alphaPulse, 0.01, 0.35);
         bgCtx.strokeStyle = "#ffffff";
+
+        bgCtx.lineWidth = d.width * 1.4 * pulse;
+        bgCtx.globalAlpha = baseAlpha * 0.2;
         bgCtx.beginPath();
         bgCtx.moveTo(tailX, tailY);
+        bgCtx.lineTo(midX, midY);
+        bgCtx.stroke();
+
+        bgCtx.lineWidth = d.width * 0.95 * pulse;
+        bgCtx.globalAlpha = clamp(baseAlpha * 1.1, 0, 0.42);
+        bgCtx.beginPath();
+        bgCtx.moveTo(midX, midY);
         bgCtx.lineTo(d.x, d.y);
         bgCtx.stroke();
       }
@@ -321,12 +366,24 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
         if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
         const tailX = d.x + d.ox;
         const tailY = d.y + d.oy;
-        fgCtx.lineWidth = d.width;
-        const alpha = clamp(d.alpha * (0.9 + scrollRef.current * 0.2) * perfScale, 0.02, 0.55);
-        fgCtx.globalAlpha = alpha;
+        const midX = tailX + (d.x - tailX) * d.midRatio + d.mx * 0.65;
+        const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.65;
+        const pulse = 0.9 + Math.sin(t * d.widthFreq + d.widthPhase) * 0.08;
+        const alphaPulse = 0.88 + Math.sin(t * d.alphaFreq + d.alphaPhase) * 0.12;
+        const baseAlpha = clamp(d.alpha * (0.95 + scrollRef.current * 0.24) * perfScale * alphaPulse, 0.03, 0.62);
         fgCtx.strokeStyle = "#ffffff";
+
+        fgCtx.lineWidth = d.width * 1.8 * pulse;
+        fgCtx.globalAlpha = baseAlpha * 0.15;
         fgCtx.beginPath();
         fgCtx.moveTo(tailX, tailY);
+        fgCtx.lineTo(midX, midY);
+        fgCtx.stroke();
+
+        fgCtx.lineWidth = d.width * 1.05 * pulse;
+        fgCtx.globalAlpha = clamp(baseAlpha * 1.12, 0, 0.7);
+        fgCtx.beginPath();
+        fgCtx.moveTo(midX, midY);
         fgCtx.lineTo(d.x, d.y);
         fgCtx.stroke();
       }
