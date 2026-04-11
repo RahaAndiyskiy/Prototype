@@ -125,6 +125,11 @@ a {
   transform-style: preserve-3d;
 }
 
+.content-grid {
+  opacity: 0;
+  transform: translateZ(-1500px) scale(0.4);
+}
+
 .hero-copy {
   display: grid;
   gap: 1.2rem;
@@ -200,6 +205,8 @@ a {
   justify-content: space-between;
   will-change: transform, opacity, filter;
   transform-style: preserve-3d;
+  opacity: 0;
+  filter: blur(10px);
   --mouse-x: 50%;
   --mouse-y: 50%;
 }
