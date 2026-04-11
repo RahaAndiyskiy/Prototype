@@ -52,8 +52,7 @@ export function HeroScene() {
 
       gsap.set(".content-card", {
         opacity: 0,
-        filter: "blur(6px)",
-        y: 40,
+        filter: "blur(10px)",
       });
 
       // Initial state: deep in space
@@ -135,12 +134,11 @@ export function HeroScene() {
           {
             filter: "blur(0px)",
             opacity: 1,
-            y: 0,
-            ease: "power2.out",
-            stagger: { each: 0.1, from: "center" },
-            duration: 0.6,
+            ease: "power4.out",
+            stagger: { each: 0.16, from: "center" },
+            duration: 1.6,
           },
-          0.6,
+          0.5,
         );
 
       // --- Smoothed split progress for the title ---
