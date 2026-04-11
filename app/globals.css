@@ -76,14 +76,16 @@ a {
   font-family: Inter, "Segoe UI", sans-serif;
   font-size: 0.62rem;
   letter-spacing: 0.1em;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
-.trigger:before {
-  content: 'sound';
+.trigger.pressed {
+  transform: translateY(2px);
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4), -2px -2px 8px rgba(255, 255, 255, 0.05);
 }
 
-#audio-trigger:checked + .trigger:before {
-  content: 'mute';
+.trigger-label {
+  pointer-events: none;
 }
 
 .dots {
@@ -113,19 +115,10 @@ a {
 
 .wave-active > .dot {
   animation-name: wave;
-  animation-timing-function: ease-in-out;
-  animation-duration: 0.75s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-duration: 1.4s;
   animation-fill-mode: forwards;
-}
-
-.dot:nth-of-type(2) {
-  z-index: 1;
-  animation-delay: 0.15s;
-}
-
-.dot:nth-of-type(3) {
-  z-index: 2;
-  animation-delay: 0.3s;
+  animation-iteration-count: 1;
 }
 
 @keyframes wave {

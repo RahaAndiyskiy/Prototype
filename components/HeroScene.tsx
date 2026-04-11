@@ -34,8 +34,10 @@ export function HeroScene() {
   const thunderAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioEnabledRef = useRef(false);
   const waveTimeoutRef = useRef<number | null>(null);
+  const pointerDownRef = useRef(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [waveActive, setWaveActive] = useState(false);
+  const [buttonPressed, setButtonPressed] = useState(false);
 
   const enableAudioPlayback = () => {
     if (audioEnabledRef.current) return;
@@ -279,6 +281,33 @@ export function HeroScene() {
     }, 1200);
   };
 
+  const handleAudioPointerDown = () => {
+    pointerDownRef.current = true;
+    setButtonPressed(true);
+  };
+
+  const handleAudioPointerUp = () => {
+    pointerDownRef.current = false;
+    setButtonPressed(false);
+  };
+
+  const handleAudioPointerCancel = () => {
+    pointerDownRef.current = false;
+    setButtonPressed(false);
+  };
+
+  const handleAudioKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === " " || event.key === "Enter" || event.key === "Spacebar") {
+      setButtonPressed(true);
+    }
+  };
+
+  const handleAudioKeyUp = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === " " || event.key === "Enter" || event.key === "Spacebar") {
+      setButtonPressed(false);
+    }
+  };
+
   const updateSpotlight = (target: HTMLElement, clientX: number, clientY: number) => {
     const rect = target.getBoundingClientRect();
     const x = clamp(((clientX - rect.left) / rect.width) * 100, 0, 100);
@@ -295,17 +324,22 @@ export function HeroScene() {
             <div className="hero-perspective">
               <div className="hero-stage">
                 <div className="audio-switch">
-                  <input
-                    id="audio-trigger"
-                    type="checkbox"
-                    checked={audioEnabled}
-                    onChange={toggleAudioEnabled}
-                    className="audio-trigger-input"
-                  />
-                  <label htmlFor="audio-trigger" className="trigger" aria-label={audioEnabled ? "Звук включён" : "Звук выключён"} />
+                  <button
+                    type="button"
+                    className={`trigger ${buttonPressed ? "pressed" : ""}`}
+                    aria-label={audioEnabled ? "Звук включён" : "Звук выключён"}
+                    aria-pressed={audioEnabled}
+                    onClick={toggleAudioEnabled}
+                    onPointerDown={handleAudioPointerDown}
+                    onPointerUp={handleAudioPointerUp}
+                    onPointerLeave={handleAudioPointerCancel}
+                    onPointerCancel={handleAudioPointerCancel}
+                    onKeyDown={handleAudioKeyDown}
+                    onKeyUp={handleAudioKeyUp}
+                  >
+                    <span className="trigger-label">{audioEnabled ? "mute" : "sound"}</span>
+                  </button>
                   <div className={`dots ${waveActive ? "wave-active" : ""}`}>
-                    <span className="dot" />
-                    <span className="dot" />
                     <span className="dot" />
                   </div>
                 </div>

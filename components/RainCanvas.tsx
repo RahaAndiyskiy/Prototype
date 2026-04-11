@@ -28,6 +28,11 @@ type Drop = {
   alphaFreq: number;
   widthPhase: number;
   widthFreq: number;
+  burstTime: number;
+  burstDuration: number;
+  burstStrength: number;
+  burstPhase: number;
+  burstActive: boolean;
   layer: "far" | "mid" | "near";
 };
 
@@ -50,6 +55,11 @@ export function RainCanvas({ speedRef, onThunder }: RainCanvasProps) {
   const dropsRef = useRef<Drop[]>([]);
   const rafRef = useRef<number | null>(null);
   const scrollRef = useRef(0);
+  const thunderCallbackRef = useRef(onThunder);
+
+  useEffect(() => {
+    thunderCallbackRef.current = onThunder;
+  }, [onThunder]);
 
   useEffect(() => {
     const bgCanvas = bgCanvasRef.current;
@@ -173,7 +183,7 @@ export function RainCanvas({ speedRef, onThunder }: RainCanvasProps) {
         secondBolt.width *= 0.8;
         lightningBolts.push(secondBolt);
       }
-      onThunder?.();
+      thunderCallbackRef.current?.();
       scheduleLightning(now);
     };
 
@@ -208,8 +218,8 @@ export function RainCanvas({ speedRef, onThunder }: RainCanvasProps) {
         alpha = lerp(0.02, 0.22, z);
       } else {
         // near
-        angleDeg = 10 + (Math.random() - 0.5) * 3; // ~10-12deg
-        speed = lerp(760, 2300, z); // much faster for near parallax burst
+        angleDeg = 9 + (Math.random() - 0.5) * 2; // ~8-10deg for a more consistent fall
+        speed = lerp(620, 1400, z); // slower, gentler front drops
         len = lerp(18, 150, z);
         width = lerp(0.18, 1.5, z);
         alpha = lerp(0.06, 0.42, z);
@@ -220,14 +230,15 @@ export function RainCanvas({ speedRef, onThunder }: RainCanvasProps) {
       const vy = Math.cos(angle) * speed;
       const perpX = Math.cos(angle);
       const perpY = -Math.sin(angle);
-      const wobble = (Math.random() - 0.5) * (layer === "near" ? 28 : layer === "mid" ? 16 : 8);
+      const wobble = (Math.random() - 0.5) * (layer === "near" ? 12 : layer === "mid" ? 10 : 8);
       const mx = perpX * wobble;
       const my = perpY * wobble;
-      const midRatio = 0.32 + Math.random() * 0.24;
+      const midRatio = layer === "near" ? 0.28 + Math.random() * 0.14 : 0.32 + Math.random() * 0.24;
       const alphaPhase = Math.random() * Math.PI * 2;
       const alphaFreq = 1.0 + Math.random() * 1.4;
       const widthPhase = Math.random() * Math.PI * 2;
       const widthFreq = 0.8 + Math.random() * 1.2;
+      const burstPhase = Math.random() * Math.PI * 2;
 
       return {
         x: Math.random() * (w + 400) - 200,
@@ -250,6 +261,11 @@ export function RainCanvas({ speedRef, onThunder }: RainCanvasProps) {
         alphaFreq,
         widthPhase,
         widthFreq,
+        burstTime: 0,
+        burstDuration: 0,
+        burstStrength: 1,
+        burstPhase,
+        burstActive: false,
         layer,
       } as Drop;
     };
@@ -310,6 +326,11 @@ export function RainCanvas({ speedRef, onThunder }: RainCanvasProps) {
       drop.alphaFreq = template.alphaFreq;
       drop.widthPhase = template.widthPhase;
       drop.widthFreq = template.widthFreq;
+      drop.burstTime = template.burstTime;
+      drop.burstDuration = template.burstDuration;
+      drop.burstStrength = template.burstStrength;
+      drop.burstPhase = template.burstPhase;
+      drop.burstActive = template.burstActive;
       drop.x = Math.random() * (w + 400) - 200;
       drop.y = spawnTop ? -Math.random() * (h * 0.35) - drop.len : Math.random() * h;
     };
@@ -415,7 +436,8 @@ export function RainCanvas({ speedRef, onThunder }: RainCanvasProps) {
 
       // speed multiplier: small scroll-based boost (~+12% max)
       const scrollSpeedBoost = 1 + scrollRef.current * 0.12;
-      const globalSpeedMult = (0.75 + perfScale * 0.35) * scrollSpeedBoost;
+      const speedBoost = clamp(0.9 + Math.min(speedRef.current, 4.5) * 0.15, 0.9, 1.6);
+      const globalSpeedMult = (0.75 + perfScale * 0.35) * scrollSpeedBoost * speedBoost;
 
       // no additive glow — use source-over
       bgCtx.globalCompositeOperation = "source-over";
@@ -495,13 +517,30 @@ export function RainCanvas({ speedRef, onThunder }: RainCanvasProps) {
       // draw near layer (sparse, faster, brighter) into foreground ctx (overlay)
       for (let i = 0; i < nearDraw; i++) {
         const d = nearDrops[i];
-        d.x += (d.vx + windLocal) * dt * globalSpeedMult;
-        d.y += d.vy * dt * globalSpeedMult;
+
+        if (!d.burstActive && Math.random() < dt * 0.004) {
+          d.burstActive = true;
+          d.burstTime = 0;
+          d.burstDuration = 0.22 + Math.random() * 0.18;
+          d.burstStrength = 1.18 + Math.random() * 0.16;
+          d.burstPhase = Math.random() * Math.PI * 2;
+        }
+
+        if (d.burstActive) {
+          d.burstTime += dt;
+          if (d.burstTime >= d.burstDuration) {
+            d.burstActive = false;
+          }
+        }
+
+        const burstFactor = d.burstActive ? 1 + (d.burstStrength - 1) * (1 - d.burstTime / d.burstDuration) : 1;
+        d.x += (d.vx + windLocal * 1.05) * dt * globalSpeedMult;
+        d.y += d.vy * dt * globalSpeedMult * burstFactor;
         if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
         const tailX = d.x + d.ox;
         const tailY = d.y + d.oy;
-        const midX = tailX + (d.x - tailX) * d.midRatio + d.mx * 0.65;
-        const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.65;
+        const midX = tailX + (d.x - tailX) * d.midRatio + d.mx * 0.45;
+        const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.45;
         const pulse = 0.9 + Math.sin(t * d.widthFreq + d.widthPhase) * 0.08;
         const alphaPulse = 0.88 + Math.sin(t * d.alphaFreq + d.alphaPhase) * 0.12;
         const baseAlpha = clamp(d.alpha * (0.95 + scrollRef.current * 0.24) * perfScale * alphaPulse, 0.03, 0.62);
