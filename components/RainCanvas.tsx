@@ -97,9 +97,9 @@ export function RainCanvas({ speedRef, onThunder }: RainCanvasProps) {
     }
 
     // Config
-    const BASE_DROPS = 240; // reduced base count
-    const MAX_DROPS = 420; // hard cap
-    const MIN_DROPS = 120; // allow much lower counts on weak devices
+    const BASE_DROPS = 450; // increased base count for denser rain
+    const MAX_DROPS = 620; // hard cap
+    const MIN_DROPS = 250; // allow much lower counts on weak devices
     const BASE_ANGLE = 12; // degrees (10-15)
     const MAX_DPR = 1.0; // cap DPR aggressively for performance
     const PERF_SAMPLES = 30; // rolling window for FPS estimation
@@ -445,8 +445,8 @@ export function RainCanvas({ speedRef, onThunder }: RainCanvasProps) {
 
       // decide per-layer counts (ratios)
       const totalDesired = activeCount;
-      const farDraw = clamp(Math.round(totalDesired * 0.6), 0, farDrops.length);
-      const midDraw = clamp(Math.round(totalDesired * 0.3), 0, midDrops.length);
+      const farDraw = clamp(Math.round(totalDesired * 0.4), 0, farDrops.length);
+      const midDraw = clamp(Math.round(totalDesired * 0.4), 0, midDrops.length);
       let nearDraw = totalDesired - farDraw - midDraw;
       if (nearDraw < 0) nearDraw = 0;
       nearDraw = Math.min(nearDraw, nearDrops.length);
