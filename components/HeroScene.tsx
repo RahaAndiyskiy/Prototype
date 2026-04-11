@@ -3,7 +3,7 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { RainCanvas } from "@/components/RainCanvas";
 
@@ -30,6 +30,29 @@ const panels = [
 export function HeroScene() {
   const speedRef = useRef(1);
   const smootherRef = useRef<ScrollSmoother | null>(null);
+  const rainAudioRef = useRef<HTMLAudioElement | null>(null);
+  const thunderAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioEnabledRef = useRef(false);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+
+  const enableAudioPlayback = () => {
+    if (audioEnabledRef.current) return;
+    audioEnabledRef.current = true;
+    setAudioEnabled(true);
+    if (rainAudioRef.current) {
+      rainAudioRef.current.currentTime = 0;
+      rainAudioRef.current.play().catch(() => {
+        // Autoplay may be blocked until user interacts; ignore silently.
+      });
+    }
+  };
+
+  const disableAudioPlayback = () => {
+    audioEnabledRef.current = false;
+    setAudioEnabled(false);
+    rainAudioRef.current?.pause();
+    thunderAudioRef.current?.pause();
+  };
 
   useEffect(() => {
     let applySplit: () => void = () => {};
@@ -199,6 +222,50 @@ export function HeroScene() {
     };
   }, []);
 
+  useEffect(() => {
+    rainAudioRef.current = new Audio("/rain-loop.mp3");
+    rainAudioRef.current.loop = true;
+    rainAudioRef.current.volume = 0.14;
+    rainAudioRef.current.preload = "auto";
+
+    thunderAudioRef.current = new Audio("/thunder-hit.mp3");
+    thunderAudioRef.current.volume = 0.28;
+    thunderAudioRef.current.preload = "auto";
+
+    window.addEventListener("pointerdown", enableAudioPlayback, { once: true, passive: true });
+    window.addEventListener("touchstart", enableAudioPlayback, { once: true, passive: true });
+    window.addEventListener("keydown", enableAudioPlayback, { once: true, passive: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", enableAudioPlayback);
+      window.removeEventListener("touchstart", enableAudioPlayback);
+      window.removeEventListener("keydown", enableAudioPlayback);
+      rainAudioRef.current?.pause();
+      thunderAudioRef.current?.pause();
+      rainAudioRef.current = null;
+      thunderAudioRef.current = null;
+    };
+  }, []);
+
+  const playThunder = () => {
+    if (!audioEnabledRef.current) return;
+    const thunder = thunderAudioRef.current;
+    if (!thunder) return;
+    thunder.currentTime = 0;
+    thunder.volume = 0.3;
+    thunder.play().catch(() => {
+      // ignore playback block
+    });
+  };
+
+  const toggleAudioEnabled = () => {
+    if (audioEnabledRef.current) {
+      disableAudioPlayback();
+    } else {
+      enableAudioPlayback();
+    }
+  };
+
   const updateSpotlight = (target: HTMLElement, clientX: number, clientY: number) => {
     const rect = target.getBoundingClientRect();
     const x = clamp(((clientX - rect.left) / rect.width) * 100, 0, 100);
@@ -214,8 +281,16 @@ export function HeroScene() {
           <section className="hero-shell">
             <div className="hero-perspective">
               <div className="hero-stage">
+                <button
+                  className="audio-toggle"
+                  type="button"
+                  aria-pressed={audioEnabled}
+                  onClick={toggleAudioEnabled}
+                >
+                  {audioEnabled ? "Звук: ВКЛ" : "Звук: ВЫКЛ"}
+                </button>
                 <div className="hero-rain-layer">
-                  <RainCanvas speedRef={speedRef} />
+                  <RainCanvas speedRef={speedRef} onThunder={playThunder} />
                 </div>
                 <div className="hero-vignette" aria-hidden="true" />
 

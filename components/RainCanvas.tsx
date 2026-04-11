@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 
 type RainCanvasProps = {
   speedRef: React.MutableRefObject<number>;
+  onThunder?: () => void;
 };
 
 type Drop = {
@@ -30,10 +31,20 @@ type Drop = {
   layer: "far" | "mid" | "near";
 };
 
+type Lightning = {
+  path: Array<{ x: number; y: number }>;
+  branch?: Array<{ x: number; y: number }>;
+  alpha: number;
+  life: number;
+  maxLife: number;
+  width: number;
+  glow: number;
+};
+
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-export function RainCanvas({ speedRef }: RainCanvasProps) {
+export function RainCanvas({ speedRef, onThunder }: RainCanvasProps) {
   const bgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const fgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const dropsRef = useRef<Drop[]>([]);
@@ -104,6 +115,66 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
         fgCanvas.style.height = `${h}px`;
         fgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
+    };
+
+    const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const lightningBolts: Lightning[] = [];
+    let nextLightningTime = performance.now() + randomRange(10, 12) * 1000;
+
+    const scheduleLightning = (now: number) => {
+      nextLightningTime = now + randomRange(10, 12) * 1000;
+    };
+
+    const createLightningBolt = (): Lightning => {
+      const path: Array<{ x: number; y: number }> = [];
+      const steps = 6 + Math.floor(Math.random() * 3);
+      let px = Math.random() * w;
+      let py = 0;
+      path.push({ x: px, y: py });
+      const targetY = h * (0.88 + Math.random() * 0.08);
+      for (let i = 1; i <= steps; i += 1) {
+        py = (targetY / steps) * i;
+        px += (Math.random() - 0.5) * w * 0.06;
+        path.push({ x: clamp(px, 0, w), y: py });
+      }
+
+      let branch: Array<{ x: number; y: number }> | undefined;
+      if (Math.random() < 0.35) {
+        const branchStart = 1 + Math.floor(Math.random() * Math.max(1, steps - 2));
+        const base = path[branchStart];
+        const branchLen = targetY - base.y;
+        const bx = clamp(base.x + (Math.random() - 0.5) * w * 0.08, 0, w);
+        const by = base.y + branchLen * (0.35 + Math.random() * 0.15);
+        branch = [
+          { x: base.x, y: base.y },
+          { x: bx, y: by },
+          { x: clamp(bx + (Math.random() - 0.5) * 30, 0, w), y: Math.min(h, by + branchLen * 0.15) },
+        ];
+      }
+
+      return {
+        path,
+        branch,
+        alpha: 1,
+        life: 0,
+        maxLife: 2.8 + Math.random() * 0.4,
+        width: 1.8 + Math.random() * 1.0,
+        glow: 16 + Math.random() * 10,
+      };
+    };
+
+    const igniteLightning = (now: number) => {
+      lightningBolts.push(createLightningBolt());
+      if (Math.random() < 0.2) {
+        const secondBolt = createLightningBolt();
+        secondBolt.maxLife *= 0.75;
+        secondBolt.glow *= 0.7;
+        secondBolt.width *= 0.8;
+        lightningBolts.push(secondBolt);
+      }
+      onThunder?.();
+      scheduleLightning(now);
     };
 
     setSize();
@@ -274,6 +345,69 @@ export function RainCanvas({ speedRef }: RainCanvasProps) {
 
       // foreground canvas: clear each frame so overlay does not darken content
       fgCtx.clearRect(0, 0, w, h);
+
+      // lightning logic
+      if (now >= nextLightningTime) {
+        igniteLightning(now);
+      }
+
+      const drawLightning = (bolt: Lightning) => {
+        const brightPhase = bolt.life < 1.0;
+        const mainAlpha = brightPhase ? bolt.alpha * 0.9 : bolt.alpha * 0.22;
+        const outlineAlpha = brightPhase ? bolt.alpha * 0.55 : bolt.alpha * 0.14;
+        const branchAlpha = brightPhase ? bolt.alpha * 0.35 : bolt.alpha * 0.09;
+        const glowStrength = brightPhase ? bolt.glow * 0.85 : bolt.glow * 0.28;
+
+        bgCtx.save();
+        bgCtx.globalCompositeOperation = "lighter";
+        bgCtx.lineCap = "round";
+        bgCtx.lineJoin = "round";
+
+        bgCtx.strokeStyle = `rgba(255,255,255,${mainAlpha})`;
+        bgCtx.shadowColor = "rgba(220, 235, 255, 0.28)";
+        bgCtx.shadowBlur = glowStrength;
+        bgCtx.lineWidth = bolt.width * (brightPhase ? 0.85 : 0.55);
+        bgCtx.beginPath();
+        bolt.path.forEach((point, index) => {
+          if (index === 0) bgCtx.moveTo(point.x, point.y);
+          else bgCtx.lineTo(point.x, point.y);
+        });
+        bgCtx.stroke();
+
+        bgCtx.strokeStyle = `rgba(236,248,255,${outlineAlpha})`;
+        bgCtx.shadowBlur = 0;
+        bgCtx.lineWidth = Math.max(1, bolt.width * (brightPhase ? 0.45 : 0.3));
+        bgCtx.beginPath();
+        bolt.path.forEach((point, index) => {
+          if (index === 0) bgCtx.moveTo(point.x, point.y);
+          else bgCtx.lineTo(point.x, point.y);
+        });
+        bgCtx.stroke();
+
+        if (bolt.branch) {
+          bgCtx.strokeStyle = `rgba(255,255,255,${branchAlpha})`;
+          bgCtx.lineWidth = bolt.width * (brightPhase ? 0.4 : 0.25);
+          bgCtx.beginPath();
+          bolt.branch.forEach((point, index) => {
+            if (index === 0) bgCtx.moveTo(point.x, point.y);
+            else bgCtx.lineTo(point.x, point.y);
+          });
+          bgCtx.stroke();
+        }
+
+        bgCtx.restore();
+      };
+
+      for (let i = lightningBolts.length - 1; i >= 0; i -= 1) {
+        const bolt = lightningBolts[i];
+        bolt.life += dt;
+        bolt.alpha = 1 - bolt.life / bolt.maxLife;
+        if (bolt.alpha <= 0) {
+          lightningBolts.splice(i, 1);
+          continue;
+        }
+        drawLightning(bolt);
+      }
 
       // adjust density with scroll (no allocations)
       const densityMult = 1 + scrollRef.current * 0.18;
