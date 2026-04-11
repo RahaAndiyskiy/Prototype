@@ -184,6 +184,8 @@ a {
 }
 
 .content-card {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   max-width: 24rem;
   min-height: clamp(16rem, 24vh, 20rem);
@@ -198,6 +200,24 @@ a {
   justify-content: space-between;
   will-change: transform, opacity, filter;
   transform-style: preserve-3d;
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+}
+
+.content-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02) 24%, transparent 52%);
+  opacity: 0;
+  transition: opacity 0.25s ease, background-position 0.15s ease;
+  mix-blend-mode: screen;
+}
+
+.content-card:hover::before {
+  opacity: 1;
 }
 
 .card-inner {

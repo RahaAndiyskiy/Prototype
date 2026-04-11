@@ -201,6 +201,14 @@ export function HeroScene() {
     };
   }, []);
 
+  const updateSpotlight = (target: HTMLElement, clientX: number, clientY: number) => {
+    const rect = target.getBoundingClientRect();
+    const x = clamp(((clientX - rect.left) / rect.width) * 100, 0, 100);
+    const y = clamp(((clientY - rect.top) / rect.height) * 100, 0, 100);
+    target.style.setProperty("--mouse-x", `${x}%`);
+    target.style.setProperty("--mouse-y", `${y}%`);
+  };
+
   return (
     <div id="smooth-wrapper">
       <div id="smooth-content">
@@ -228,12 +236,14 @@ export function HeroScene() {
                         key={panel.title}
                         className={`content-card ${panel.align === "left" ? "card-left" : "card-right"}`}
                         onMouseMove={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
+                          const target = e.currentTarget as HTMLElement;
+                          const rect = target.getBoundingClientRect();
                           const x = (e.clientX - rect.left) / rect.width - 0.5;
                           const y = (e.clientY - rect.top) / rect.height - 0.5;
                           const baseRotation = panel.align === "left" ? 12 : -12;
+                          updateSpotlight(target, e.clientX, e.clientY);
                           // smoother, less aggressive response: smaller multiplier + longer duration
-                          gsap.to(e.currentTarget, {
+                          gsap.to(target, {
                             rotateX: -y * 8,
                             rotateY: baseRotation + x * 8,
                             duration: 1.2,
@@ -242,9 +252,10 @@ export function HeroScene() {
                           });
                         }}
                         onMouseLeave={(e) => {
+                          const target = e.currentTarget as HTMLElement;
                           const baseRotation = panel.align === "left" ? 12 : -12;
                           // smooth return without elastic bounce
-                          gsap.to(e.currentTarget, {
+                          gsap.to(target, {
                             rotateX: 0,
                             rotateY: baseRotation,
                             duration: 1.0,
