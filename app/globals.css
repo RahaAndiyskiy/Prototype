@@ -315,9 +315,9 @@ a {
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.01) 14%, transparent 24%);
+  background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.03) 12%, transparent 20%);
   opacity: 0;
-  transition: opacity 0.25s ease, background-position 0.15s ease;
+  transition: opacity 0.18s ease, background-position 0.12s ease;
   mix-blend-mode: screen;
 }
 
@@ -333,7 +333,7 @@ a {
 }
 
 .content-card:hover::before {
-  opacity: 0.35;
+  opacity: 0.65;
 }
 
 .content-card h2 {
