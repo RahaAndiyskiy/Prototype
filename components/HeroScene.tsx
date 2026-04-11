@@ -33,21 +33,30 @@ export function HeroScene() {
   const rainAudioRef = useRef<HTMLAudioElement | null>(null);
   const thunderAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioEnabledRef = useRef(false);
+  const audioUnlockedRef = useRef(false);
   const waveTimeoutRef = useRef<number | null>(null);
   const pointerDownRef = useRef(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [waveActive, setWaveActive] = useState(false);
   const [buttonPressed, setButtonPressed] = useState(false);
 
-  const enableAudioPlayback = () => {
-    if (audioEnabledRef.current) return;
-    audioEnabledRef.current = true;
-    setAudioEnabled(true);
-    if (rainAudioRef.current) {
-      rainAudioRef.current.currentTime = 0;
-      rainAudioRef.current.play().catch(() => {
-        // Autoplay may be blocked until user interacts; ignore silently.
-      });
+  const enableAudioPlayback = async (): Promise<boolean> => {
+    if (audioEnabledRef.current) return true;
+    const audio = rainAudioRef.current;
+    if (!audio) return false;
+
+    audio.muted = false;
+    audio.loop = true;
+    audio.currentTime = 0;
+
+    try {
+      await audio.play();
+      audioEnabledRef.current = true;
+      setAudioEnabled(true);
+      return true;
+    } catch (error) {
+      console.warn("Audio playback failed", error);
+      return false;
     }
   };
 
@@ -56,6 +65,25 @@ export function HeroScene() {
     setAudioEnabled(false);
     rainAudioRef.current?.pause();
     thunderAudioRef.current?.pause();
+  };
+
+  const unlockAudioPlayback = async (): Promise<void> => {
+    if (audioUnlockedRef.current) return;
+    const audio = rainAudioRef.current;
+    if (!audio) return;
+
+    audio.muted = false;
+    audio.loop = true;
+    audio.currentTime = 0;
+
+    try {
+      await audio.play();
+      audio.pause();
+      audio.currentTime = 0;
+      audioUnlockedRef.current = true;
+    } catch (error) {
+      console.warn("Audio unlock failed", error);
+    }
   };
 
   useEffect(() => {
@@ -236,14 +264,7 @@ export function HeroScene() {
     thunderAudioRef.current.volume = 0.28;
     thunderAudioRef.current.preload = "auto";
 
-    window.addEventListener("pointerdown", enableAudioPlayback, { once: true, passive: true });
-    window.addEventListener("touchstart", enableAudioPlayback, { once: true, passive: true });
-    window.addEventListener("keydown", enableAudioPlayback, { once: true, passive: true });
-
     return () => {
-      window.removeEventListener("pointerdown", enableAudioPlayback);
-      window.removeEventListener("touchstart", enableAudioPlayback);
-      window.removeEventListener("keydown", enableAudioPlayback);
       rainAudioRef.current?.pause();
       thunderAudioRef.current?.pause();
       rainAudioRef.current = null;
@@ -265,12 +286,17 @@ export function HeroScene() {
     });
   };
 
-  const toggleAudioEnabled = () => {
+  const toggleAudioEnabled = async () => {
+    if (!audioUnlockedRef.current && !audioEnabledRef.current) {
+      await unlockAudioPlayback();
+    }
+
     if (audioEnabledRef.current) {
       disableAudioPlayback();
     } else {
-      enableAudioPlayback();
+      await enableAudioPlayback();
     }
+
     if (waveTimeoutRef.current) {
       window.clearTimeout(waveTimeoutRef.current);
     }
