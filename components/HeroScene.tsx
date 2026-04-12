@@ -14,9 +14,9 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 const panels = [
   {
-    eyebrow: "Trajectory",
-    title: "Shifting focus through the weather",
-    text: "Two perspective-weighted content planes rise out of the dark and settle into alignment while the scene keeps pushing forward.",
+    eyebrow: "fear is natural",
+    title: "FEAR",
+    text: "holds you back or drives you forward, carries momentum",
     align: "left",
   },
   {
@@ -126,7 +126,17 @@ export function HeroScene() {
 
       gsap.set(".content-card", {
         opacity: 0,
+      });
+
+      gsap.set(".card-inner", {
         filter: "blur(10px)",
+      });
+
+      gsap.set(".word-reveal", {
+        opacity: 0,
+        y: 12,
+        filter: "blur(8px)",
+        display: "inline-block",
       });
 
       // Initial state: deep in space
@@ -143,8 +153,8 @@ export function HeroScene() {
         scrollTrigger: {
           trigger: ".hero-shell",
           start: "top top",
-          end: "+=160%", // Increase end for longer travel feeling
-          scrub: true,    // continuous scrub for a more immediate forward feel
+          end: "+=180%", // Increase end for more scroll distance and clarity
+          scrub: true,
           pin: true,
           anticipatePin: 1,
         },
@@ -185,7 +195,8 @@ export function HeroScene() {
           ".hero-subtitle",
           {
             opacity: 1,
-            duration: 0.1,
+            ease: "power1.out",
+            duration: 0.5,
           },
           "subtitle-enter",
         )
@@ -195,8 +206,8 @@ export function HeroScene() {
             yPercent: 0,
             opacity: 1,
             filter: "blur(0px)",
-            ease: "power2.out",
-            duration: 0.5,
+            ease: "power3.out",
+            duration: 1,
           },
           "subtitle-enter",
         )
@@ -206,10 +217,10 @@ export function HeroScene() {
             yPercent: 0,
             opacity: 1,
             filter: "blur(0px)",
-            ease: "power2.out",
-            duration: 0.5,
+            ease: "power3.out",
+            duration: 1,
           },
-          "subtitle-enter",
+          "subtitle-enter+=0.2",
         )
         .to(
           ".hero-subtitle",
@@ -219,9 +230,9 @@ export function HeroScene() {
             ease: "power1.out",
             duration: 0.6,
           },
-          "subtitle-enter+=0.12",
+          "subtitle-enter+=0.4",
         )
-        .addLabel("cards-reveal", 0.78)
+        .addLabel("cards-reveal", 1.12)
         .to(
           ".card-left",
           {
@@ -244,17 +255,35 @@ export function HeroScene() {
           },
           "cards-reveal",
         )
-        // Crossfade blur and final approach only after subtitle finishes
         .to(
           ".content-card",
           {
-            filter: "blur(0px)",
             opacity: 1,
-            ease: "power4.out",
-            stagger: { each: 0.16, from: "center" },
-            duration: 1.6,
+            duration: 0.2,
           },
-          "cards-reveal+=0.12",
+          "cards-reveal",
+        )
+        .addLabel("left-text", "cards-reveal+=0.24")
+        .to(
+          ".card-left .card-inner",
+          {
+            filter: "blur(0px)",
+            duration: 1.08,
+            ease: "power2.out",
+          },
+          "left-text",
+        )
+        .to(
+          ".card-left .word-reveal",
+          {
+            opacity: 1,
+            y: 0,
+            filter: "blur(0px)",
+            ease: "power2.out",
+            stagger: { each: 0.16, from: "start" },
+            duration: 0.672,
+          },
+          "left-text+=0.1",
         );
 
       // --- Smoothed split progress for the title ---
@@ -403,6 +432,16 @@ export function HeroScene() {
     target.style.setProperty("--mouse-y", `${y}%`);
   };
 
+  const renderWordSpans = (text: string) => {
+    const words = text.trim().split(/\s+/);
+    return words.map((word, index) => (
+      <span className="word-reveal" key={`${word}-${index}`}>
+        {word}
+        {index < words.length - 1 ? "\u00a0" : ""}
+      </span>
+    ));
+  };
+
   return (
     <div id="smooth-wrapper">
       <div id="smooth-content">
@@ -436,7 +475,7 @@ export function HeroScene() {
                 <div className="hero-vignette" aria-hidden="true" />
 
                 <header className="hero-copy">
-                  <p className="hero-kicker">Minimal cinematic scroll sequence</p>
+                  <p className="hero-kicker">it doesn`t stop</p>
                   <h1 className="hero-title" aria-label="Through the Storm">
                     <span className="hero-title-left">Through</span>
                     <span className="hero-title-right">the Storm</span>
@@ -483,9 +522,9 @@ export function HeroScene() {
                         }}
                       >
                         <div className="card-inner">
-                          <span className="content-eyebrow">{panel.eyebrow}</span>
-                          <h2>{panel.title}</h2>
-                          <p>{panel.text}</p>
+                          <span className="content-eyebrow">{renderWordSpans(panel.eyebrow)}</span>
+                          <h2>{renderWordSpans(panel.title)}</h2>
+                          <p>{renderWordSpans(panel.text)}</p>
                         </div>
                       </article>
                     ))}

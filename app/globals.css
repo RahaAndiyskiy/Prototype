@@ -259,7 +259,7 @@ a {
   margin: 0;
   letter-spacing: 0.34em;
   text-transform: uppercase;
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   color: var(--muted);
 }
 
@@ -328,9 +328,14 @@ a {
   will-change: transform, opacity, filter;
   transform-style: preserve-3d;
   opacity: 0;
-  filter: blur(10px);
   --mouse-x: 50%;
   --mouse-y: 50%;
+}
+
+.word-reveal {
+  display: inline-block;
+  white-space: pre;
+  opacity: 0;
 }
 
 .content-card::before {
@@ -421,6 +426,12 @@ a {
   font-weight: 600;
   letter-spacing: -0.03em;
   color: #eef2ff;
+}
+
+.content-card.card-left h2 {
+  font-size: clamp(4.65rem, 7vw, 7.05rem);
+  letter-spacing: -0.08em;
+  line-height: 0.96;
 }
 
 .content-card p {
