@@ -153,7 +153,7 @@ export function HeroScene() {
         scrollTrigger: {
           trigger: ".hero-shell",
           start: "top top",
-          end: "+=180%", // Increase end for more scroll distance and clarity
+          end: "+=260%", // Extend the scroll range for the flyby sequence
           scrub: true,
           pin: true,
           anticipatePin: 1,
@@ -324,9 +324,81 @@ export function HeroScene() {
             filter: "blur(0px)",
             ease: "power2.out",
             stagger: { each: 0.16, from: "start" },
-            duration: 0.672,
+            duration: 1.05,
           },
           "right-text+=0.1",
+        )
+        .to({}, { duration: 1.4 }, "right-text+=1.15")
+        .addLabel("flyby-start", "right-text+=2.55")
+        .to(
+          ".hero-stage",
+          {
+            scale: 1.62,
+            y: -90,
+            ease: "power1.inOut",
+            duration: 1.8,
+          },
+          "flyby-start",
+        )
+        .to(
+          ".card-left",
+          {
+            x: -170,
+            y: -34,
+            scale: 1.38,
+            z: 640,
+            rotateY: 28,
+            opacity: 0,
+            duration: 1.8,
+            ease: "power2.inOut",
+          },
+          "flyby-start",
+        )
+        .to(
+          ".card-right",
+          {
+            x: 170,
+            y: -34,
+            scale: 1.38,
+            z: 640,
+            rotateY: -28,
+            opacity: 0,
+            duration: 1.8,
+            ease: "power2.inOut",
+          },
+          "flyby-start",
+        )
+        .to(
+          ".hero-subtitle",
+          {
+            z: -660,
+            scale: 0.8,
+            y: -20,
+            ease: "power2.out",
+            duration: 1.8,
+          },
+          "flyby-start",
+        )
+        .to(
+          ".hero-kicker",
+          {
+            opacity: 0,
+            y: -16,
+            duration: 1.2,
+            ease: "power2.out",
+          },
+          "flyby-start+=0.18",
+        )
+        .to(
+          ".hero-title",
+          {
+            opacity: 0,
+            y: -32,
+            scale: 0.92,
+            duration: 1.2,
+            ease: "power2.out",
+          },
+          "flyby-start+=0.18",
         );
 
       // --- Smoothed split progress for the title ---
@@ -531,8 +603,8 @@ export function HeroScene() {
                     <span className="hero-title-right">the Storm</span>
                   </h1>
                   <div className="hero-subtitle" aria-hidden="true">
-                    <span className="hero-subtitle-top">STAY</span>
-                    <span className="hero-subtitle-bottom">MOVE</span>
+                    <span className="hero-subtitle-top">KEEP</span>
+                    <span className="hero-subtitle-bottom">MOVING</span>
                   </div>
                 </header>
 
