@@ -175,11 +175,11 @@ a {
 .hero-wave-riser {
   position: absolute;
   left: 0;
-  bottom: 0;
+  bottom: -30vh;
   width: 100%;
-  height: 32vh;
+  height: 85vh;
   opacity: 0;
-  z-index: 11;
+  z-index: 50;
   pointer-events: none;
   overflow: hidden;
   will-change: transform, opacity;
@@ -191,27 +191,41 @@ a {
   display: block;
 }
 
-.hero-wave-svg .parallax > use {
-  animation: move-forever 32s cubic-bezier(.55,.5,.45,.5) infinite;
-}
-
 .hero-wave-svg .parallax > use:nth-child(1) {
-  animation-delay: -3s;
-  animation-duration: 12s;
+  animation: move-forever 40s cubic-bezier(.25,.5,.45,.5) infinite;
+  animation-delay: -6s;
 }
 
 .hero-wave-svg .parallax > use:nth-child(2) {
-  animation-delay: -4s;
-  animation-duration: 18s;
+  animation: move-forever-alt 44s cubic-bezier(.3,.55,.5,.45) infinite;
+  animation-delay: -8s;
 }
 
+.hero-wave-svg .parallax > use {
+  animation-timing-function: ease-in-out;
+}
 
 @keyframes move-forever {
   0% {
-    transform: translate3d(-90px,0,0);
+    transform: translate3d(-32px, 0, 0);
+  }
+  50% {
+    transform: translate3d(32px, 1px, 0);
   }
   100% {
-    transform: translate3d(85px,0,0);
+    transform: translate3d(-32px, 0, 0);
+  }
+}
+
+@keyframes move-forever-alt {
+  0% {
+    transform: translate3d(30px, 0, 0);
+  }
+  50% {
+    transform: translate3d(-30px, -1.5px, 0);
+  }
+  100% {
+    transform: translate3d(30px, 0, 0);
   }
 }
 
@@ -286,7 +300,7 @@ a {
   z-index: 6;
 }
 
-..hero-copy,
+.hero-copy,
 .content-grid {
   position: relative;
   z-index: 22;

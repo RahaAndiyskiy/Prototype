@@ -462,12 +462,12 @@ export function HeroScene() {
         .to(
           ".hero-wave-riser",
           {
-            yPercent: 0,
+            yPercent: -36,
             opacity: 1,
             duration: 2.4,
             ease: "power1.out",
           },
-          "flyby-start",
+          "words-start",
         )
         .to(
           ".word-phrase",
@@ -687,11 +687,11 @@ export function HeroScene() {
                 <div className="hero-wave-riser" aria-hidden="true">
                   <svg className="hero-wave-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none" shapeRendering="auto">
                     <defs>
-                      <path id="gentle-wave" d="M-160 44c30 0 58-10 88-10s 58 10 88 10 58-10 88-10 58 10 88 10 v44h-352z" />
+                      <path id="gentle-wave" d="M-160 44c30 0 58-4 88-4s 58 4 88 4 58-4 88-4 58 4 88 4 v44h-352z" />
                     </defs>
                     <g className="parallax">
-                      <use xlinkHref="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.95)" />
-                      <use xlinkHref="#gentle-wave" x="48" y="4" fill="rgba(245,245,245,0.8)" />
+                      <use xlinkHref="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.9)" />
+                      <use xlinkHref="#gentle-wave" x="48" y="4" fill="rgba(255,255,255,0.9)" />
                     </g>
                   </svg>
                 </div>
