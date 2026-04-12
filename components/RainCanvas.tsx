@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 type RainCanvasProps = {
   speedRef: React.MutableRefObject<number>;
   onThunder?: () => void;
+  lightningEnabled?: boolean;
 };
 
 type Drop = {
@@ -49,17 +50,22 @@ type Lightning = {
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-export function RainCanvas({ speedRef, onThunder }: RainCanvasProps) {
+export function RainCanvas({ speedRef, onThunder, lightningEnabled }: RainCanvasProps) {
   const bgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const fgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const dropsRef = useRef<Drop[]>([]);
   const rafRef = useRef<number | null>(null);
   const scrollRef = useRef(0);
   const thunderCallbackRef = useRef(onThunder);
+  const lightningEnabledRef = useRef(lightningEnabled);
 
   useEffect(() => {
     thunderCallbackRef.current = onThunder;
   }, [onThunder]);
+
+  useEffect(() => {
+    lightningEnabledRef.current = lightningEnabled;
+  }, [lightningEnabled]);
 
   useEffect(() => {
     const bgCanvas = bgCanvasRef.current;
@@ -369,7 +375,15 @@ export function RainCanvas({ speedRef, onThunder }: RainCanvasProps) {
 
       // lightning logic
       if (now >= nextLightningTime) {
-        igniteLightning(now);
+        if (lightningEnabledRef.current) {
+          igniteLightning(now);
+        } else {
+          scheduleLightning(now);
+        }
+      }
+
+      if (!lightningEnabledRef.current && lightningBolts.length > 0) {
+        lightningBolts.length = 0;
       }
 
       const drawLightning = (bolt: Lightning) => {

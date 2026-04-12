@@ -37,6 +37,8 @@ export function HeroScene() {
   const waveTimeoutRef = useRef<number | null>(null);
   const pointerDownRef = useRef(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [lightningEnabled, setLightningEnabled] = useState(true);
+  const lightningEnabledRef = useRef(true);
   const [waveActive, setWaveActive] = useState(false);
   const [buttonPressed, setButtonPressed] = useState(false);
 
@@ -146,6 +148,9 @@ export function HeroScene() {
         opacity: 0,
       });
 
+      let thunderAllowed = true;
+      let flybyProgress = 1;
+
       const timeline = gsap.timeline({
         defaults: {
           ease: "none",
@@ -157,6 +162,14 @@ export function HeroScene() {
           scrub: true,
           pin: true,
           anticipatePin: 1,
+          onUpdate(self) {
+            const shouldAllow = self.progress < flybyProgress;
+            if (shouldAllow !== thunderAllowed) {
+              thunderAllowed = shouldAllow;
+              lightningEnabledRef.current = shouldAllow;
+              setLightningEnabled(shouldAllow);
+            }
+          },
         },
       });
 
@@ -401,6 +414,9 @@ export function HeroScene() {
           "flyby-start+=0.18",
         );
 
+      const totalDuration = timeline.duration();
+      flybyProgress = totalDuration ? (timeline.labels["flyby-start"] ?? 0) / totalDuration : 1;
+
       // --- Smoothed split progress for the title ---
       // Keep the ScrollTrigger / scrub but smooth the progress used specifically
       // for the split so a sudden scroll won't instantly snap the titles away.
@@ -480,8 +496,15 @@ export function HeroScene() {
     };
   }, []);
 
+  useEffect(() => {
+    lightningEnabledRef.current = lightningEnabled;
+    if (!lightningEnabled) {
+      thunderAudioRef.current?.pause();
+    }
+  }, [lightningEnabled]);
+
   const playThunder = () => {
-    if (!audioEnabledRef.current) return;
+    if (!audioEnabledRef.current || !lightningEnabledRef.current) return;
     const thunder = thunderAudioRef.current;
     if (!thunder) return;
     thunder.currentTime = 0;
@@ -592,7 +615,7 @@ export function HeroScene() {
                   </div>
                 </div>
                 <div className="hero-rain-layer">
-                  <RainCanvas speedRef={speedRef} onThunder={playThunder} />
+                  <RainCanvas speedRef={speedRef} onThunder={playThunder} lightningEnabled={lightningEnabled} />
                 </div>
                 <div className="hero-vignette" aria-hidden="true" />
 
