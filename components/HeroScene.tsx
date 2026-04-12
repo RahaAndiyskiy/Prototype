@@ -156,6 +156,11 @@ export function HeroScene() {
         filter: "blur(6px)",
       });
 
+      gsap.set(".hero-wave-riser", {
+        yPercent: 100,
+        opacity: 0,
+      });
+
       // Initial state: deep in space
       gsap.set(".content-grid", {
         z: -1500,
@@ -260,7 +265,7 @@ export function HeroScene() {
           },
           "subtitle-enter+=0.4",
         )
-        .addLabel("cards-reveal", 1.12)
+        .addLabel("cards-reveal", 2.4)
         .to(
           ".card-left",
           {
@@ -453,6 +458,16 @@ export function HeroScene() {
             ease: "power1.inOut",
           },
           "words-start",
+        )
+        .to(
+          ".hero-wave-riser",
+          {
+            yPercent: 0,
+            opacity: 1,
+            duration: 2.4,
+            ease: "power1.out",
+          },
+          "flyby-start",
         )
         .to(
           ".word-phrase",
@@ -668,6 +683,17 @@ export function HeroScene() {
                 </div>
                 <div className="hero-rain-layer">
                   <RainCanvas speedRef={speedRef} onThunder={playThunder} lightningEnabled={lightningEnabled} />
+                </div>
+                <div className="hero-wave-riser" aria-hidden="true">
+                  <svg className="hero-wave-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none" shapeRendering="auto">
+                    <defs>
+                      <path id="gentle-wave" d="M-160 44c30 0 58-10 88-10s 58 10 88 10 58-10 88-10 58 10 88 10 v44h-352z" />
+                    </defs>
+                    <g className="parallax">
+                      <use xlinkHref="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.95)" />
+                      <use xlinkHref="#gentle-wave" x="48" y="4" fill="rgba(245,245,245,0.8)" />
+                    </g>
+                  </svg>
                 </div>
                 <div id="hero-anchor" className="hero-anchor" aria-hidden="true" />
                 <div className="hero-word-cloud" aria-hidden="true">

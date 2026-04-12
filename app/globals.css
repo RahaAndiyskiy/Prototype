@@ -165,6 +165,81 @@ a {
     linear-gradient(180deg, #050607 0%, #030405 55%, #080b0e 100%);
 }
 
+.hero-word-cloud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 19;
+}
+
+.hero-wave-riser {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 32vh;
+  opacity: 0;
+  z-index: 11;
+  pointer-events: none;
+  overflow: hidden;
+  will-change: transform, opacity;
+}
+
+.hero-wave-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hero-wave-svg .parallax > use {
+  animation: move-forever 32s cubic-bezier(.55,.5,.45,.5) infinite;
+}
+
+.hero-wave-svg .parallax > use:nth-child(1) {
+  animation-delay: -3s;
+  animation-duration: 12s;
+}
+
+.hero-wave-svg .parallax > use:nth-child(2) {
+  animation-delay: -4s;
+  animation-duration: 18s;
+}
+
+
+@keyframes move-forever {
+  0% {
+    transform: translate3d(-90px,0,0);
+  }
+  100% {
+    transform: translate3d(85px,0,0);
+  }
+}
+
+.word-phrase {
+  position: absolute;
+  opacity: 0;
+  display: inline-block;
+  color: rgba(255, 255, 255, 0.98);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  font-weight: normal;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: 0 0 24px rgba(255, 255, 255, 0.18), 0 0 42px rgba(168, 183, 255, 0.12);
+  white-space: nowrap;
+  will-change: opacity, transform, filter;
+  transform: translate(-50%, -50%) scale(0.84);
+}
+
+.hero-anchor {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
 #smooth-wrapper {
   height: 100vh;
   width: 100vw;
@@ -211,10 +286,10 @@ a {
   z-index: 6;
 }
 
-.hero-copy,
+..hero-copy,
 .content-grid {
   position: relative;
-  z-index: 12;
+  z-index: 22;
   transform-style: preserve-3d;
 }
 
