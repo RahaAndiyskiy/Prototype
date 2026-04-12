@@ -161,6 +161,12 @@ export function HeroScene() {
         opacity: 0,
       });
 
+      gsap.set(".black-shell", {
+        opacity: 0,
+        yPercent: 12,
+        pointerEvents: "none",
+      });
+
       // Initial state: deep in space
       gsap.set(".content-grid", {
         z: -1500,
@@ -178,7 +184,7 @@ export function HeroScene() {
         scrollTrigger: {
           trigger: ".hero-shell",
           start: "top top",
-          end: "+=260%", // Extend the scroll range for the flyby sequence
+          end: "+=340%", // Extend the scroll range for the flyby and the dive transition
           scrub: true,
           pin: true,
           anticipatePin: 1,
@@ -479,6 +485,46 @@ export function HeroScene() {
             yoyo: true,
           },
           "words-start+=1.5",
+        )
+        .addLabel("dive-start", "words-start+=2.6")
+        .to(
+          ".hero-stage",
+          {
+            y: 140,
+            scale: 1.75,
+            ease: "power1.inOut",
+            duration: 2.2,
+          },
+          "dive-start",
+        )
+        .to(
+          ".hero-wave-riser",
+          {
+            yPercent: -80,
+            opacity: 0.8,
+            duration: 2.2,
+            ease: "power1.inOut",
+          },
+          "dive-start",
+        )
+        .to(
+          ".hero-copy, .scene, .hero-word-cloud, .audio-switch",
+          {
+            opacity: 0,
+            duration: 1.6,
+            ease: "power1.out",
+          },
+          "dive-start+=0.4",
+        )
+        .to(
+          ".black-shell",
+          {
+            opacity: 1,
+            yPercent: 0,
+            duration: 1.8,
+            ease: "power1.inOut",
+          },
+          "dive-start+=0.2",
         );
 
       const totalDuration = timeline.duration();
@@ -769,6 +815,7 @@ export function HeroScene() {
             </div>
           </section>
         </main>
+        <div className="black-shell" aria-hidden="true" />
       </div>
     </div>
   );
