@@ -47,6 +47,8 @@ export function HeroScene() {
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [lightningEnabled, setLightningEnabled] = useState(true);
   const lightningEnabledRef = useRef(true);
+  const rainFadeRef = useRef({ value: 1 });
+  const rainAudioControlRef = useRef({ playbackRate: 1, volume: 0.14 });
   const [waveActive, setWaveActive] = useState(false);
   const [buttonPressed, setButtonPressed] = useState(false);
 
@@ -58,6 +60,8 @@ export function HeroScene() {
     audio.muted = false;
     audio.loop = true;
     audio.currentTime = 0;
+    audio.playbackRate = rainAudioControlRef.current.playbackRate;
+    audio.volume = rainAudioControlRef.current.volume;
 
     try {
       await audio.play();
@@ -325,6 +329,7 @@ export function HeroScene() {
           "left-text+=0.1",
         )
         .addLabel("glitch", "left-text+=1.6")
+        .call(playThunder, [], "glitch")
         .to(
           ".page-shell",
           {
@@ -525,7 +530,33 @@ export function HeroScene() {
             ease: "power1.inOut",
           },
           "dive-start+=0.2",
-        );
+        )
+        .to(rainFadeRef.current, {
+          value: 0,
+          duration: 2.2,
+          ease: "power1.inOut",
+        },
+        "dive-start")
+        .to(rainAudioControlRef.current, {
+          playbackRate: 0.72,
+          duration: 2.2,
+          ease: "power1.out",
+          onUpdate: () => {
+            const audio = rainAudioRef.current;
+            if (audio) audio.playbackRate = rainAudioControlRef.current.playbackRate;
+          },
+        },
+        "dive-start")
+        .to(rainAudioControlRef.current, {
+          volume: 0,
+          duration: 2.2,
+          ease: "power1.out",
+          onUpdate: () => {
+            const audio = rainAudioRef.current;
+            if (audio) audio.volume = rainAudioControlRef.current.volume;
+          },
+        },
+        "dive-start+=0.4");
 
       const totalDuration = timeline.duration();
       flybyProgress = totalDuration ? (timeline.labels["flyby-start"] ?? 0) / totalDuration : 1;
@@ -728,7 +759,12 @@ export function HeroScene() {
                   </div>
                 </div>
                 <div className="hero-rain-layer">
-                  <RainCanvas speedRef={speedRef} onThunder={playThunder} lightningEnabled={lightningEnabled} />
+                  <RainCanvas
+                    speedRef={speedRef}
+                    onThunder={playThunder}
+                    lightningEnabled={lightningEnabled}
+                    rainFadeRef={rainFadeRef}
+                  />
                 </div>
                 <div className="hero-wave-riser" aria-hidden="true">
                   <svg className="hero-wave-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none" shapeRendering="auto">

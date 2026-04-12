@@ -6,6 +6,7 @@ type RainCanvasProps = {
   speedRef: React.MutableRefObject<number>;
   onThunder?: () => void;
   lightningEnabled?: boolean;
+  rainFadeRef?: React.MutableRefObject<{ value: number }>;
 };
 
 type Drop = {
@@ -50,7 +51,7 @@ type Lightning = {
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-export function RainCanvas({ speedRef, onThunder, lightningEnabled }: RainCanvasProps) {
+export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef }: RainCanvasProps) {
   const bgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const fgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const dropsRef = useRef<Drop[]>([]);
@@ -344,6 +345,13 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled }: RainCanvas
     const render = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
+      const rainFade = clamp(rainFadeRef?.current?.value ?? 1, 0, 1);
+      if (rainFade <= 0.02) {
+        bgCtx.clearRect(0, 0, w, h);
+        fgCtx.clearRect(0, 0, w, h);
+        rafRef.current = requestAnimationFrame(render);
+        return;
+      }
 
       // subtle drifting wind target
       windTimer += dt;
@@ -480,7 +488,7 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled }: RainCanvas
         const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.25;
         const pulse = 0.92 + Math.sin(t * d.widthFreq + d.widthPhase) * 0.06;
         const alphaPulse = 0.92 + Math.sin(t * d.alphaFreq + d.alphaPhase) * 0.08;
-        const baseAlpha = clamp(d.alpha * (0.7 + scrollRef.current * 0.12) * perfScale * alphaPulse, 0.005, 0.18);
+        const baseAlpha = clamp(d.alpha * (0.7 + scrollRef.current * 0.12) * perfScale * alphaPulse * rainFade, 0.005, 0.18);
         bgCtx.strokeStyle = "#ffffff";
 
         bgCtx.lineWidth = d.width * 1.25 * pulse;
@@ -510,7 +518,7 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled }: RainCanvas
         const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.35;
         const pulse = 0.9 + Math.sin(t * d.widthFreq + d.widthPhase) * 0.07;
         const alphaPulse = 0.9 + Math.sin(t * d.alphaFreq + d.alphaPhase) * 0.08;
-        const baseAlpha = clamp(d.alpha * (0.75 + scrollRef.current * 0.15) * perfScale * alphaPulse, 0.01, 0.35);
+        const baseAlpha = clamp(d.alpha * (0.75 + scrollRef.current * 0.15) * perfScale * alphaPulse * rainFade, 0.01, 0.35);
         bgCtx.strokeStyle = "#ffffff";
 
         bgCtx.lineWidth = d.width * 1.4 * pulse;
@@ -557,7 +565,7 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled }: RainCanvas
         const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.45;
         const pulse = 0.9 + Math.sin(t * d.widthFreq + d.widthPhase) * 0.08;
         const alphaPulse = 0.88 + Math.sin(t * d.alphaFreq + d.alphaPhase) * 0.12;
-        const baseAlpha = clamp(d.alpha * (0.95 + scrollRef.current * 0.24) * perfScale * alphaPulse, 0.03, 0.62);
+        const baseAlpha = clamp(d.alpha * (0.95 + scrollRef.current * 0.24) * perfScale * alphaPulse * rainFade, 0.03, 0.62);
         fgCtx.strokeStyle = "#ffffff";
 
         fgCtx.lineWidth = d.width * 1.8 * pulse;
