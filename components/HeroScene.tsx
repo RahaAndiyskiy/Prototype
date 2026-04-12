@@ -106,7 +106,7 @@ export function HeroScene() {
       smootherRef.current = ScrollSmoother.create({
         wrapper: "#smooth-wrapper",
         content: "#smooth-content",
-        smooth: 2.5, // Increased for a more cinematic, heavy-inertia feel
+        smooth: 4.5, // Increased for a more cinematic, heavy-inertia feel
         effects: true,
         normalizeScroll: true,
       });
@@ -188,8 +188,8 @@ export function HeroScene() {
         scrollTrigger: {
           trigger: ".hero-shell",
           start: "top top",
-          end: "+=340%", // Extend the scroll range for the flyby and the dive transition
-          scrub: true,
+          end: "+=510%", // Extend the scroll range for the flyby and the dive transition
+          scrub: 1.0,
           pin: true,
           anticipatePin: 1,
           onUpdate(self) {
@@ -491,7 +491,7 @@ export function HeroScene() {
           },
           "words-start+=1.5",
         )
-        .addLabel("dive-start", "words-start+=2.6")
+        .addLabel("dive-start", "words-start+=5.6")
         .to(
           ".hero-stage",
           {
