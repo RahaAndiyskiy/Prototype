@@ -105,6 +105,25 @@ export function HeroScene() {
         transformOrigin: "100% 50%",
       });
 
+      gsap.set(".hero-subtitle", {
+        opacity: 0,
+        z: 0,
+        scale: 1,
+        transformPerspective: 1000,
+      });
+
+      gsap.set(".hero-subtitle-top", {
+        yPercent: 24,
+        opacity: 0,
+        filter: "blur(8px)",
+      });
+
+      gsap.set(".hero-subtitle-bottom", {
+        yPercent: -24,
+        opacity: 0,
+        filter: "blur(8px)",
+      });
+
       gsap.set(".content-card", {
         opacity: 0,
         filter: "blur(10px)",
@@ -146,8 +165,8 @@ export function HeroScene() {
         .to(
           ".hero-stage",
           {
-            scale: 1.3,
-            y: -40,
+            scale: 1.42,
+            y: -55,
             ease: "none",
             duration: 1.6, // extend so scale/translate persist longer during scroll
           },
@@ -161,6 +180,48 @@ export function HeroScene() {
           },
           0,
         )
+        .addLabel("subtitle-enter", 0.25)
+        .to(
+          ".hero-subtitle",
+          {
+            opacity: 1,
+            duration: 0.1,
+          },
+          "subtitle-enter",
+        )
+        .to(
+          ".hero-subtitle-top",
+          {
+            yPercent: 0,
+            opacity: 1,
+            filter: "blur(0px)",
+            ease: "power2.out",
+            duration: 0.5,
+          },
+          "subtitle-enter",
+        )
+        .to(
+          ".hero-subtitle-bottom",
+          {
+            yPercent: 0,
+            opacity: 1,
+            filter: "blur(0px)",
+            ease: "power2.out",
+            duration: 0.5,
+          },
+          "subtitle-enter",
+        )
+        .to(
+          ".hero-subtitle",
+          {
+            z: -180,
+            scale: 0.88,
+            ease: "power1.out",
+            duration: 0.6,
+          },
+          "subtitle-enter+=0.12",
+        )
+        .addLabel("cards-reveal", 0.78)
         .to(
           ".card-left",
           {
@@ -170,7 +231,7 @@ export function HeroScene() {
             opacity: 1,
             duration: 0.8,
           },
-          0.4,
+          "cards-reveal",
         )
         .to(
           ".card-right",
@@ -181,9 +242,9 @@ export function HeroScene() {
             opacity: 1,
             duration: 0.8,
           },
-          0.4,
+          "cards-reveal",
         )
-        // Crossfade blur and final approach
+        // Crossfade blur and final approach only after subtitle finishes
         .to(
           ".content-card",
           {
@@ -193,7 +254,7 @@ export function HeroScene() {
             stagger: { each: 0.16, from: "center" },
             duration: 1.6,
           },
-          0.5,
+          "cards-reveal+=0.12",
         );
 
       // --- Smoothed split progress for the title ---
@@ -380,6 +441,10 @@ export function HeroScene() {
                     <span className="hero-title-left">Through</span>
                     <span className="hero-title-right">the Storm</span>
                   </h1>
+                  <div className="hero-subtitle" aria-hidden="true">
+                    <span className="hero-subtitle-top">STAY</span>
+                    <span className="hero-subtitle-bottom">MOVE</span>
+                  </div>
                 </header>
 
                 <div className="scene">

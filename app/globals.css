@@ -229,6 +229,30 @@ a {
   text-align: center;
   align-self: center;
   translate: 0 -12vh;
+  transform-style: preserve-3d;
+}
+
+.hero-subtitle {
+  margin-top: 0.6rem;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.08em;
+  opacity: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.8rem, 3.6vw, 3rem);
+  line-height: 0.88;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(237, 242, 255, 0.95);
+  text-shadow: 0 0 22px rgba(201, 215, 255, 0.14);
+  transform-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.hero-subtitle-top,
+.hero-subtitle-bottom {
+  display: inline-block;
+  will-change: transform, opacity, filter;
 }
 
 .hero-kicker {
@@ -273,9 +297,9 @@ a {
 
 .scene-inner {
   display: flex;
-  width: min(840px, 92vw);
+  width: min(900px, 92vw);
   justify-content: center;
-  gap: 30px;
+  gap: 3.5rem;
   align-items: stretch;
   transform-style: preserve-3d;
 }
@@ -288,7 +312,7 @@ a {
   min-height: 24rem;
   height: 24rem;
   padding: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.35rem;
   background: #050506;
   background-image:
@@ -327,9 +351,9 @@ a {
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.35rem;
-  opacity: 0.5;
+  opacity: 0.55;
 }
 
 .content-card:hover::before {
