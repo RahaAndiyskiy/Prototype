@@ -85,7 +85,7 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled }: RainCanvas
         width: "100%",
         height: "100%",
         pointerEvents: "none",
-        zIndex: "9999",
+        zIndex: "5",
       });
       document.body.appendChild(fgCanvas);
       fgCanvasRef.current = fgCanvas;
