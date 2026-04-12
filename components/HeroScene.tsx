@@ -27,6 +27,14 @@ const panels = [
   },
 ] as const;
 
+const wordItems = [
+  { text: "Don't panic", left: "45%", top: "28%" },
+  { text: "Stay composed", left: "58%", top: "34%" },
+  { text: "Resist doubt", left: "38%", top: "44%" },
+  { text: "Release fear", left: "62%", top: "50%" },
+  { text: "Hold patience", left: "50%", top: "60%" },
+] as const;
+
 export function HeroScene() {
   const speedRef = useRef(1);
   const smootherRef = useRef<ScrollSmoother | null>(null);
@@ -139,6 +147,13 @@ export function HeroScene() {
         y: 12,
         filter: "blur(8px)",
         display: "inline-block",
+      });
+
+      gsap.set(".word-phrase", {
+        opacity: 0,
+        y: 24,
+        scale: 0.84,
+        filter: "blur(6px)",
       });
 
       // Initial state: deep in space
@@ -412,6 +427,43 @@ export function HeroScene() {
             ease: "power2.out",
           },
           "flyby-start+=0.18",
+        )
+        .addLabel("words-start", "flyby-start+=0.6")
+        .to(
+          ".word-phrase",
+          {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            filter: "blur(0px)",
+            ease: "power3.out",
+            duration: 1.4,
+            stagger: {
+              each: 1.05,
+              from: "start",
+            },
+          },
+          "words-start",
+        )
+        .to(
+          speedRef,
+          {
+            current: 9,
+            duration: 1.2,
+            ease: "power1.inOut",
+          },
+          "words-start",
+        )
+        .to(
+          ".word-phrase",
+          {
+            scale: 1.02,
+            ease: "power1.inOut",
+            duration: 0.9,
+            repeat: 1,
+            yoyo: true,
+          },
+          "words-start+=1.5",
         );
 
       const totalDuration = timeline.duration();
@@ -616,6 +668,18 @@ export function HeroScene() {
                 </div>
                 <div className="hero-rain-layer">
                   <RainCanvas speedRef={speedRef} onThunder={playThunder} lightningEnabled={lightningEnabled} />
+                </div>
+                <div id="hero-anchor" className="hero-anchor" aria-hidden="true" />
+                <div className="hero-word-cloud" aria-hidden="true">
+                  {wordItems.map((item) => (
+                    <span
+                      key={item.text}
+                      className="word-phrase"
+                      style={{ left: item.left, top: item.top }}
+                    >
+                      {item.text}
+                    </span>
+                  ))}
                 </div>
                 <div className="hero-vignette" aria-hidden="true" />
 

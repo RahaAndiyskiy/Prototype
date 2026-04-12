@@ -212,23 +212,23 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled }: RainCanvas
 
       if (layer === "far") {
         angleDeg = 5 + (Math.random() - 0.5) * 2; // ~5deg
-        speed = lerp(120, 360, z); // much slower for stronger parallax
-        len = lerp(6, 80, z);
-        width = lerp(0.06, 0.26, z);
-        alpha = lerp(0.008, 0.07, z);
+        speed = lerp(140, 420, z);
+        len = lerp(8, 90, z);
+        width = lerp(0.08, 0.34, z);
+        alpha = lerp(0.01, 0.08, z);
       } else if (layer === "mid") {
         angleDeg = BASE_ANGLE + (Math.random() - 0.5) * 3; // current feel
-        speed = lerp(380, 980, z);
-        len = lerp(10, 110, z);
-        width = lerp(0.12, 1.0, z);
-        alpha = lerp(0.02, 0.22, z);
+        speed = lerp(420, 1080, z);
+        len = lerp(14, 120, z);
+        width = lerp(0.16, 1.25, z);
+        alpha = lerp(0.03, 0.24, z);
       } else {
         // near
         angleDeg = 9 + (Math.random() - 0.5) * 2; // ~8-10deg for a more consistent fall
-        speed = lerp(620, 1400, z); // slower, gentler front drops
-        len = lerp(18, 150, z);
-        width = lerp(0.18, 1.5, z);
-        alpha = lerp(0.06, 0.42, z);
+        speed = lerp(700, 1560, z);
+        len = lerp(24, 180, z);
+        width = lerp(0.24, 2.0, z);
+        alpha = lerp(0.08, 0.48, z);
       }
 
       const angle = (angleDeg * Math.PI) / 180;
@@ -445,13 +445,13 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled }: RainCanvas
       }
 
       // adjust density with scroll (no allocations)
-      const densityMult = 1 + scrollRef.current * 0.18;
+      const densityMult = 1 + scrollRef.current * 0.28;
       activeCount = clamp(Math.round(BASE_DROPS * densityMult * perfScale), MIN_DROPS, MAX_DROPS);
 
-      // speed multiplier: small scroll-based boost (~+12% max)
-      const scrollSpeedBoost = 1 + scrollRef.current * 0.12;
-      const speedBoost = clamp(0.9 + Math.min(speedRef.current, 4.5) * 0.15, 0.9, 1.6);
-      const globalSpeedMult = (0.75 + perfScale * 0.35) * scrollSpeedBoost * speedBoost;
+      // speed multiplier: stronger scroll-based boost
+      const scrollSpeedBoost = 1 + scrollRef.current * 0.24;
+      const speedBoost = clamp(0.7 + Math.min(speedRef.current, 9) * 0.18, 0.95, 2.0);
+      const globalSpeedMult = (0.68 + perfScale * 0.36) * scrollSpeedBoost * speedBoost;
 
       // no additive glow — use source-over
       bgCtx.globalCompositeOperation = "source-over";
