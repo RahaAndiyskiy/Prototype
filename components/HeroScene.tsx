@@ -14,15 +14,15 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 const panels = [
   {
-    eyebrow: "fear is natural",
-    title: "FEAR",
+    eyebrow: "is natural",
+    title: "FEAR\nDOUBT",
     text: "holds you back or drives you forward, carries momentum",
     align: "left",
   },
   {
-    eyebrow: "Depth",
-    title: "Rain, parallax and controlled collapse",
-    text: "The headline splits in half, dissolves in motion and leaves the eye to lock onto the foreground blocks as the scroll progresses.",
+    eyebrow: "is a choice",
+    title: "DETERMI\nNATION",
+    text: "built on the belief this is the right path",
     align: "right",
   },
 ] as const;
@@ -284,6 +284,49 @@ export function HeroScene() {
             duration: 0.672,
           },
           "left-text+=0.1",
+        )
+        .addLabel("glitch", "left-text+=1.6")
+        .to(
+          ".page-shell",
+          {
+            filter: "invert(1)",
+            duration: 0.25,
+            ease: "none",
+          },
+          "glitch",
+        )
+        .to(
+          ".page-shell",
+          {
+            filter: "invert(0)",
+            duration: 0.25,
+            ease: "none",
+            repeat: 3,
+            yoyo: true,
+          },
+          "glitch+=0.26",
+        )
+        .addLabel("right-text", "glitch+=0.36")
+        .to(
+          ".card-right .card-inner",
+          {
+            filter: "blur(0px)",
+            duration: 1.08,
+            ease: "power2.out",
+          },
+          "right-text",
+        )
+        .to(
+          ".card-right .word-reveal",
+          {
+            opacity: 1,
+            y: 0,
+            filter: "blur(0px)",
+            ease: "power2.out",
+            stagger: { each: 0.16, from: "start" },
+            duration: 0.672,
+          },
+          "right-text+=0.1",
         );
 
       // --- Smoothed split progress for the title ---
@@ -433,13 +476,20 @@ export function HeroScene() {
   };
 
   const renderWordSpans = (text: string) => {
-    const words = text.trim().split(/\s+/);
-    return words.map((word, index) => (
-      <span className="word-reveal" key={`${word}-${index}`}>
-        {word}
-        {index < words.length - 1 ? "\u00a0" : ""}
-      </span>
-    ));
+    const lines = text.split(/\r?\n/);
+    return lines.flatMap((line, lineIndex) => {
+      const words = line.trim().split(/\s+/).filter(Boolean);
+      const lineSpans = words.map((word, wordIndex) => (
+        <span className="word-reveal" key={`${word}-${lineIndex}-${wordIndex}`}>
+          {word}
+          {wordIndex < words.length - 1 ? "\u00a0" : ""}
+        </span>
+      ));
+      if (lineIndex < lines.length - 1) {
+        lineSpans.push(<br key={`br-${lineIndex}`} />);
+      }
+      return lineSpans;
+    });
   };
 
   return (

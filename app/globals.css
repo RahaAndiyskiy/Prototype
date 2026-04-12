@@ -38,6 +38,7 @@ a {
     linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent 18%);
   width: 100vw;
   position: relative;
+  will-change: filter;
 }
 
 .audio-switch {
@@ -381,7 +382,7 @@ a {
   margin: 0;
   max-width: 28ch;
   color: rgba(225, 230, 240, 0.78);
-  font-size: 1.02rem;
+  font-size: 1.12rem;
   line-height: 1.75;
   font-family: Inter, "Segoe UI", sans-serif;
 }
@@ -429,16 +430,35 @@ a {
 }
 
 .content-card.card-left h2 {
-  font-size: clamp(4.65rem, 7vw, 7.05rem);
+  font-size: clamp(3.65rem, 5vw, 5.4rem);
   letter-spacing: -0.08em;
   line-height: 0.96;
+}
+
+.content-card.card-right .card-inner {
+  align-items: flex-end;
+}
+
+.content-card.card-right h2 {
+  font-size: clamp(3.65rem, 5vw, 5.4rem);
+  letter-spacing: -0.08em;
+  line-height: 0.96;
+  text-align: right;
+  width: 100%;
+  max-width: 16ch;
+}
+
+.content-card.card-right .content-eyebrow,
+.content-card.card-right p {
+  text-align: right;
+  width: 100%;
 }
 
 .content-card p {
   margin: 0;
   max-width: 28ch;
   color: rgba(225, 230, 240, 0.78);
-  font-size: 1.02rem;
+  font-size: 1.12rem;
   line-height: 1.75;
   font-family: Inter, "Segoe UI", sans-serif;
 }
