@@ -165,6 +165,12 @@ export function HeroScene() {
         opacity: 0,
       });
 
+      gsap.set(".scroll-end-content", {
+        xPercent: 40,
+        opacity: 0,
+        filter: "blur(12px)",
+      });
+
       // Initial state: deep in space
       gsap.set(".content-grid", {
         z: -1500,
@@ -515,6 +521,17 @@ export function HeroScene() {
           },
           "dive-start+=0.4",
         )
+        .to(
+          ".scroll-end-content",
+          {
+            xPercent: 0,
+            opacity: 1,
+            filter: "blur(0px)",
+            duration: 1.8,
+            ease: "power1.out",
+          },
+          "dive-start+=0.4",
+        )
         .to(rainFadeRef.current, {
           value: 0,
           duration: 2.2,
@@ -716,11 +733,12 @@ export function HeroScene() {
   };
 
   return (
-    <div id="smooth-wrapper">
-      <div id="smooth-content">
-        <main className="page-shell">
-          <section className="hero-shell">
-            <div className="hero-perspective">
+    <>
+      <div id="smooth-wrapper">
+        <div id="smooth-content">
+          <main className="page-shell">
+            <section className="hero-shell">
+              <div className="hero-perspective">
               <div className="hero-stage">
                 <div className="audio-switch">
                   <button
@@ -835,7 +853,12 @@ export function HeroScene() {
             </div>
           </section>
         </main>
+        <div id="scroll-end-point" className="scroll-end-point" />
       </div>
     </div>
+    <div className="scroll-end-content" aria-hidden="true">
+      <p className="scroll-end-text">Focus, take a deep breath, prepare for growth.</p>
+    </div>
+    </>
   );
 }
