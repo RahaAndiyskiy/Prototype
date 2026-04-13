@@ -51,6 +51,8 @@ export function HeroScene() {
   const rainAudioControlRef = useRef({ playbackRate: 1, volume: 0.14 });
   const [waveActive, setWaveActive] = useState(false);
   const [buttonPressed, setButtonPressed] = useState(false);
+  const [actionPressed, setActionPressed] = useState(false);
+  const [actionWaveActive, setActionWaveActive] = useState(false);
 
   const enableAudioPlayback = async (): Promise<boolean> => {
     if (audioEnabledRef.current) return true;
@@ -169,6 +171,12 @@ export function HeroScene() {
         xPercent: 40,
         opacity: 0,
         filter: "blur(12px)",
+      });
+
+      gsap.set(".scroll-action-button", {
+        opacity: 0,
+        y: 16,
+        scale: 0.98,
       });
 
       // Initial state: deep in space
@@ -532,6 +540,17 @@ export function HeroScene() {
           },
           "dive-start+=0.4",
         )
+        .to(
+          ".scroll-action-button",
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 1.4,
+            ease: "power2.out",
+          },
+          "dive-start+=1.0",
+        )
         .to(rainFadeRef.current, {
           value: 0,
           duration: 2.2,
@@ -707,6 +726,35 @@ export function HeroScene() {
     }
   };
 
+  const handleActionPointerDown = () => {
+    setActionPressed(true);
+    setActionWaveActive(true);
+  };
+
+  const handleActionPointerUp = () => {
+    setActionPressed(false);
+    setActionWaveActive(false);
+  };
+
+  const handleActionPointerCancel = () => {
+    setActionPressed(false);
+    setActionWaveActive(false);
+  };
+
+  const handleActionKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === " " || event.key === "Enter" || event.key === "Spacebar") {
+      setActionPressed(true);
+      setActionWaveActive(true);
+    }
+  };
+
+  const handleActionKeyUp = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === " " || event.key === "Enter" || event.key === "Spacebar") {
+      setActionPressed(false);
+      setActionWaveActive(false);
+    }
+  };
+
   const updateSpotlight = (target: HTMLElement, clientX: number, clientY: number) => {
     const rect = target.getBoundingClientRect();
     const x = clamp(((clientX - rect.left) / rect.width) * 100, 0, 100);
@@ -858,6 +906,24 @@ export function HeroScene() {
     </div>
     <div className="scroll-end-content" aria-hidden="true">
       <p className="scroll-end-text">Focus, take a deep breath, prepare for growth.</p>
+      <div className="scroll-action">
+        <button
+          type="button"
+          className={`trigger scroll-action-button ${actionPressed ? "pressed" : ""}`}
+          aria-label="Focus action"
+          onPointerDown={handleActionPointerDown}
+          onPointerUp={handleActionPointerUp}
+          onPointerLeave={handleActionPointerCancel}
+          onPointerCancel={handleActionPointerCancel}
+          onKeyDown={handleActionKeyDown}
+          onKeyUp={handleActionKeyUp}
+        >
+          hold
+        </button>
+        <div className={`dots action-dots ${actionWaveActive ? "hold-wave-active" : ""}`}>
+          <span className="dot" />
+        </div>
+      </div>
     </div>
     </>
   );
