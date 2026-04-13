@@ -175,24 +175,13 @@ a {
 .hero-wave-riser {
   position: absolute;
   left: 0;
-  bottom: -40vh;
+  bottom: -200vh;
   width: 100%;
-  height: 90vh;
+  height: 350vh;
   opacity: 0;
   z-index: 50;
   pointer-events: none;
   overflow: hidden;
-  will-change: transform, opacity;
-}
-
-.black-shell {
-  position: fixed;
-  inset: 0;
-  background: #000;
-  opacity: 0;
-  z-index: 55;
-  pointer-events: none;
-  transform: translateY(12%);
   will-change: transform, opacity;
 }
 
@@ -218,25 +207,25 @@ a {
 
 @keyframes move-forever {
   0% {
-    transform: translate3d(-32px, 0, 0);
+    transform: translate3d(-16px, 0, 0);
   }
   50% {
-    transform: translate3d(32px, 1px, 0);
+    transform: translate3d(16px, 0.5px, 0);
   }
   100% {
-    transform: translate3d(-32px, 0, 0);
+    transform: translate3d(-16px, 0, 0);
   }
 }
 
 @keyframes move-forever-alt {
   0% {
-    transform: translate3d(30px, 0, 0);
+    transform: translate3d(15px, 0, 0);
   }
   50% {
-    transform: translate3d(-30px, -1.5px, 0);
+    transform: translate3d(-15px, -0.75px, 0);
   }
   100% {
-    transform: translate3d(30px, 0, 0);
+    transform: translate3d(15px, 0, 0);
   }
 }
 

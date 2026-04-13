@@ -165,12 +165,6 @@ export function HeroScene() {
         opacity: 0,
       });
 
-      gsap.set(".black-shell", {
-        opacity: 0,
-        yPercent: 12,
-        pointerEvents: "none",
-      });
-
       // Initial state: deep in space
       gsap.set(".content-grid", {
         z: -1500,
@@ -505,8 +499,8 @@ export function HeroScene() {
         .to(
           ".hero-wave-riser",
           {
-            yPercent: -80,
-            opacity: 0.8,
+            yPercent: -60,
+            opacity: 1,
             duration: 2.2,
             ease: "power1.inOut",
           },
@@ -520,16 +514,6 @@ export function HeroScene() {
             ease: "power1.out",
           },
           "dive-start+=0.4",
-        )
-        .to(
-          ".black-shell",
-          {
-            opacity: 1,
-            yPercent: 0,
-            duration: 1.8,
-            ease: "power1.inOut",
-          },
-          "dive-start+=0.2",
         )
         .to(rainFadeRef.current, {
           value: 0,
@@ -769,11 +753,11 @@ export function HeroScene() {
                 <div className="hero-wave-riser" aria-hidden="true">
                   <svg className="hero-wave-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none" shapeRendering="auto">
                     <defs>
-                      <path id="gentle-wave" d="M-160 44c30 0 58-4 88-4s 58 4 88 4 58-4 88-4 58 4 88 4 v44h-352z" />
+                      <path id="gentle-wave" d="M-160 44c30 0 58-2 88-2s 58 2 88 2 58-2 88-2 58 2 88 2 v44h-352z" />
                     </defs>
                     <g className="parallax">
                       <use xlinkHref="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.9)" />
-                      <use xlinkHref="#gentle-wave" x="48" y="4" fill="rgba(255,255,255,0.9)" />
+                      <use xlinkHref="#gentle-wave" x="48" y="1" fill="rgba(255,255,255,0.9)" />
                     </g>
                   </svg>
                 </div>
@@ -851,7 +835,6 @@ export function HeroScene() {
             </div>
           </section>
         </main>
-        <div className="black-shell" aria-hidden="true" />
       </div>
     </div>
   );
