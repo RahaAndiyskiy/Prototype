@@ -56,9 +56,14 @@ export function HeroScene() {
   const [holdProgress, setHoldProgress] = useState(0);
   const [finalSceneActive, setFinalSceneActive] = useState(false);
   const [finalSceneComplete, setFinalSceneComplete] = useState(false);
-  const finalRainSpeedRef = useRef(9);
+  const [finalTextStage, setFinalTextStage] = useState(0);
+  const [finalTextVisible, setFinalTextVisible] = useState(true);
+  const [finalHeroTitleVisible, setFinalHeroTitleVisible] = useState(false);
+  const finalRainSpeedRef = useRef({ value: 2.8 });
   const finalRainFadeRef = useRef({ value: 1 });
+  const finalTextTimeoutsRef = useRef<number[]>([]);
   const holdProgressRef = useRef({ value: 0 });
+  const finalHeroTitleTimelineRef = useRef<gsap.core.Timeline | null>(null);
   const holdTweenRef = useRef<gsap.core.Tween | null>(null);
   const heroZoomRef = useRef<gsap.core.Tween | null>(null);
   const finalTimelineRef = useRef<gsap.core.Timeline | null>(null);
@@ -676,6 +681,53 @@ export function HeroScene() {
     }
   }, [lightningEnabled]);
 
+  useEffect(() => {
+    if (!finalHeroTitleVisible) {
+      finalHeroTitleTimelineRef.current?.kill();
+      return;
+    }
+
+    finalHeroTitleTimelineRef.current?.kill();
+    finalHeroTitleTimelineRef.current = gsap.timeline();
+    finalHeroTitleTimelineRef.current
+      .set(".final-hero-title-left", {
+        x: -140,
+        rotateY: 26,
+        opacity: 0,
+        filter: "blur(8px)",
+      })
+      .set(".final-hero-title-right", {
+        x: 140,
+        rotateY: -26,
+        opacity: 0,
+        filter: "blur(8px)",
+      })
+      .to(
+        ".final-hero-title-left",
+        {
+          x: 0,
+          rotateY: 0,
+          opacity: 1,
+          filter: "blur(0px)",
+          duration: 1,
+          ease: "power3.out",
+        },
+        0,
+      )
+      .to(
+        ".final-hero-title-right",
+        {
+          x: 0,
+          rotateY: 0,
+          opacity: 1,
+          filter: "blur(0px)",
+          duration: 1,
+          ease: "power3.out",
+        },
+        0,
+      );
+  }, [finalHeroTitleVisible]);
+
   const playThunder = () => {
     if (!audioEnabledRef.current || !lightningEnabledRef.current) return;
     const thunder = thunderAudioRef.current;
@@ -744,14 +796,71 @@ export function HeroScene() {
     setHoldProgress(0);
   };
 
+  const clearFinalTextTimeouts = () => {
+    finalTextTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    finalTextTimeoutsRef.current = [];
+  };
+
+  const swapFinalTextStage = (nextStage: number, delay = 0) => {
+    finalTextTimeoutsRef.current.push(
+      window.setTimeout(() => {
+        setFinalTextVisible(false);
+        finalTextTimeoutsRef.current.push(
+          window.setTimeout(() => {
+            setFinalTextStage(nextStage);
+            setFinalTextVisible(true);
+            finalTextTimeoutsRef.current.push(
+              window.setTimeout(() => {
+                setFinalTextVisible(false);
+              }, 3000),
+            );
+          }, 220),
+        );
+      }, delay),
+    );
+  };
+
   const handleHoldComplete = () => {
     setActionWaveActive(false);
     setActionPressed(false);
     setHoldProgress(1);
     setFinalSceneActive(true);
-    setTimeout(() => {
-      setFinalSceneComplete(true);
-    }, 500);
+    setFinalTextStage(0);
+    setFinalTextVisible(true);
+    setFinalHeroTitleVisible(false);
+    clearFinalTextTimeouts();
+    finalTextTimeoutsRef.current.push(
+      window.setTimeout(() => {
+        setFinalTextVisible(false);
+        finalTextTimeoutsRef.current.push(
+          window.setTimeout(() => {
+            setFinalTextStage(1);
+            setFinalTextVisible(true);
+            finalTextTimeoutsRef.current.push(
+              window.setTimeout(() => {
+                setFinalTextVisible(false);
+                finalTextTimeoutsRef.current.push(
+                  window.setTimeout(() => {
+                    setFinalTextStage(2);
+                    setFinalTextVisible(true);
+                    finalTextTimeoutsRef.current.push(
+                      window.setTimeout(() => {
+                        setFinalTextVisible(false);
+                        finalTextTimeoutsRef.current.push(
+                          window.setTimeout(() => {
+                            setFinalHeroTitleVisible(true);
+                          }, 400),
+                        );
+                      }, 3000),
+                    );
+                  }, 600),
+                );
+              }, 3000),
+            );
+          }, 600),
+        );
+      }, 3000),
+    );
     gsap.to(".hero-stage", {
       scale: 1.9,
       duration: 0.8,
@@ -760,11 +869,29 @@ export function HeroScene() {
     if (finalTimelineRef.current) {
       finalTimelineRef.current.kill();
     }
-    finalTimelineRef.current = gsap.timeline().set(".final-overlay", {
-      opacity: 1,
-      visibility: "visible",
-      pointerEvents: "auto",
-    }).to(
+    const finalTimeline = gsap.timeline();
+    finalTimeline
+      .to(finalRainSpeedRef.current, {
+        value: 2.8,
+        duration: 0.2,
+        ease: "power3.out",
+      })
+      .to(finalRainSpeedRef.current, {
+        value: 1.1,
+        duration: 3,
+        ease: "power3.out",
+      })
+      .to(finalRainSpeedRef.current, {
+        value: 0.02,
+        duration: 3,
+        ease: "power3.out",
+      })
+      .set(".final-overlay", {
+        opacity: 1,
+        visibility: "visible",
+        pointerEvents: "auto",
+      })
+      .to(
       ".final-flash",
       {
         opacity: 1,
@@ -797,6 +924,10 @@ export function HeroScene() {
       },
       0.05,
     );
+    finalTimelineRef.current = finalTimeline;
+    setTimeout(() => {
+      setFinalSceneComplete(true);
+    }, 500);
   };
 
   const handleActionPointerDown = () => {
@@ -812,7 +943,7 @@ export function HeroScene() {
     resetHoldProgress();
     holdTweenRef.current = gsap.to(holdProgressRef.current, {
       value: 1,
-      duration: 3,
+      duration: 1,
       ease: "linear",
       onUpdate: () => {
         setHoldProgress(holdProgressRef.current.value);
@@ -1063,14 +1194,34 @@ export function HeroScene() {
         lightningEnabled={false}
         rainFadeRef={finalRainFadeRef}
         baseAngle={0}
-        speedFactor={1.8}
+        speedFactor={0.65}
+        finalMode
         zIndex={9999}
       />
     )}
     <div className={`final-overlay${finalSceneActive ? " active" : ""}${finalSceneComplete ? " complete" : ""}`} aria-hidden={!finalSceneActive}>
       <div className={`final-text-wrapper${finalSceneComplete ? " visible" : ""}`}>
-        <span className="final-text">YOU CHOSE TO MOVE</span>
-        <span className="final-subtext">by Iona Takeru</span>
+        <span className={`final-text${finalTextVisible ? " visible" : " hidden"}`}>
+          {finalTextStage === 0 && "YOU CHOSE TO MOVE"}
+          {finalTextStage === 1 && "YOU COULD HAVE STOPPED"}
+          {finalTextStage === 2 && "JUST KEEP GOING"}
+        </span>
+      </div>
+      <div className={`final-text-wrapper${finalSceneComplete ? " visible" : ""}`}>
+        <span className={`final-text${finalTextVisible ? " visible" : " hidden"}`}>
+          {finalTextStage === 0 && "YOU CHOSE TO MOVE"}
+          {finalTextStage === 1 && "YOU COULD HAVE STOPPED"}
+          {finalTextStage === 2 && "JUST KEEP GOING"}
+        </span>
+        <div className={`final-hero-title-wrapper${finalHeroTitleVisible ? " visible" : ""}`}>
+          <h1 className="final-hero-title" aria-hidden="true">
+            <span className="final-hero-title-left">Through</span>
+            <span className="final-hero-title-right-wrapper">
+              <span className="final-hero-title-right">the Storm</span>
+              <span className="final-hero-caption">interactive web installation by Iona takeru</span>
+            </span>
+          </h1>
+        </div>
       </div>
     </div>
     </>

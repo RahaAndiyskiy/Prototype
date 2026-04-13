@@ -3,12 +3,13 @@
 import { useEffect, useRef } from "react";
 
 type RainCanvasProps = {
-  speedRef: React.MutableRefObject<number>;
+  speedRef: React.MutableRefObject<number | { value: number }>;
   onThunder?: () => void;
   lightningEnabled?: boolean;
   rainFadeRef?: React.MutableRefObject<{ value: number }>;
   baseAngle?: number;
   speedFactor?: number;
+  finalMode?: boolean;
   zIndex?: number;
 };
 
@@ -54,7 +55,7 @@ type Lightning = {
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef, baseAngle, speedFactor, zIndex }: RainCanvasProps) {
+export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef, baseAngle, speedFactor, finalMode, zIndex }: RainCanvasProps) {
   const bgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const fgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const dropsRef = useRef<Drop[]>([]);
@@ -139,6 +140,11 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef,
     };
 
     const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const getSpeedValue = () => {
+      return typeof speedRef.current === "object" ? speedRef.current.value : speedRef.current;
+    };
+    const isFinalMode = Boolean(finalMode);
 
     const lightningBolts: Lightning[] = [];
     let nextLightningTime = performance.now() + randomRange(10, 12) * 1000;
@@ -472,7 +478,9 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef,
 
       // speed multiplier: stronger scroll-based boost
       const scrollSpeedBoost = 1 + scrollRef.current * 0.24;
-      const speedBoost = clamp(0.7 + Math.min(speedRef.current, 9) * 0.18, 0.95, 2.0);
+      const speedBoost = isFinalMode
+        ? clamp(0.35 + Math.min(getSpeedValue(), 9) * 0.05, 0.35, 0.85)
+        : clamp(0.7 + Math.min(getSpeedValue(), 9) * 0.18, 0.95, 2.0);
       const globalSpeedMult = (0.68 + perfScale * 0.36) * scrollSpeedBoost * speedBoost * SPEED_FACTOR;
 
       // no additive glow — use source-over
@@ -488,19 +496,22 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef,
       nearDraw = Math.min(nearDraw, nearDrops.length);
 
       const windLocal = wind;
+      const currentSpeed = getSpeedValue();
+      const lenScale = clamp(0.12 + currentSpeed * 0.1, 0.08, 1);
       const t = now * 0.001;
 
       // draw far layer (almost vertical, slow, faint) into background ctx
       for (let i = 0; i < farDraw; i++) {
         const d = farDrops[i];
         const currentAngle = d.angle + pointerAngle * 0.7;
+        const currentLen = d.len * lenScale;
         const vx = Math.sin(currentAngle) * d.speed;
         const vy = Math.cos(currentAngle) * d.speed;
         d.x += (vx + windLocal) * dt * globalSpeedMult;
         d.y += vy * dt * globalSpeedMult;
-        if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
-        const tailX = d.x - Math.sin(currentAngle) * d.len;
-        const tailY = d.y - Math.cos(currentAngle) * d.len;
+        if (d.y - currentLen > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
+        const tailX = d.x - Math.sin(currentAngle) * currentLen;
+        const tailY = d.y - Math.cos(currentAngle) * currentLen;
         const midX = tailX + (d.x - tailX) * d.midRatio + d.mx * 0.25;
         const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.25;
         const pulse = 0.92 + Math.sin(t * d.widthFreq + d.widthPhase) * 0.06;
@@ -527,13 +538,14 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef,
       for (let i = 0; i < midDraw; i++) {
         const d = midDrops[i];
         const currentAngle = d.angle + pointerAngle * 0.8;
+        const currentLen = d.len * lenScale;
         const vx = Math.sin(currentAngle) * d.speed;
         const vy = Math.cos(currentAngle) * d.speed;
         d.x += (vx + windLocal) * dt * globalSpeedMult;
         d.y += vy * dt * globalSpeedMult;
-        if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
-        const tailX = d.x - Math.sin(currentAngle) * d.len;
-        const tailY = d.y - Math.cos(currentAngle) * d.len;
+        if (d.y - currentLen > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
+        const tailX = d.x - Math.sin(currentAngle) * currentLen;
+        const tailY = d.y - Math.cos(currentAngle) * currentLen;
         const midX = tailX + (d.x - tailX) * d.midRatio + d.mx * 0.35;
         const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.35;
         const pulse = 0.9 + Math.sin(t * d.widthFreq + d.widthPhase) * 0.07;
@@ -577,13 +589,14 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef,
 
         const burstFactor = d.burstActive ? 1 + (d.burstStrength - 1) * (1 - d.burstTime / d.burstDuration) : 1;
         const currentAngle = d.angle + pointerAngle;
+        const currentLen = d.len * lenScale;
         const vx = Math.sin(currentAngle) * d.speed;
         const vy = Math.cos(currentAngle) * d.speed;
         d.x += (vx + windLocal * 1.05) * dt * globalSpeedMult;
         d.y += vy * dt * globalSpeedMult * burstFactor;
-        if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
-        const tailX = d.x - Math.sin(currentAngle) * d.len;
-        const tailY = d.y - Math.cos(currentAngle) * d.len;
+        if (d.y - currentLen > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
+        const tailX = d.x - Math.sin(currentAngle) * currentLen;
+        const tailY = d.y - Math.cos(currentAngle) * currentLen;
         const midX = tailX + (d.x - tailX) * d.midRatio + d.mx * 0.45;
         const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.45;
         const pulse = 0.9 + Math.sin(t * d.widthFreq + d.widthPhase) * 0.08;
