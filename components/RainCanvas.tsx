@@ -7,6 +7,9 @@ type RainCanvasProps = {
   onThunder?: () => void;
   lightningEnabled?: boolean;
   rainFadeRef?: React.MutableRefObject<{ value: number }>;
+  baseAngle?: number;
+  speedFactor?: number;
+  zIndex?: number;
 };
 
 type Drop = {
@@ -51,7 +54,7 @@ type Lightning = {
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef }: RainCanvasProps) {
+export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef, baseAngle, speedFactor, zIndex }: RainCanvasProps) {
   const bgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const fgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const dropsRef = useRef<Drop[]>([]);
@@ -72,6 +75,15 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef 
     const bgCanvas = bgCanvasRef.current;
     if (!bgCanvas) return;
 
+    const BASE_DROPS = 450; // increased base count for denser rain
+    const MAX_DROPS = 620; // hard cap
+    const MIN_DROPS = 250; // allow much lower counts on weak devices
+    const BASE_ANGLE = typeof baseAngle === "number" ? baseAngle : 12; // degrees: 0 = vertical down, 10-15 = slanted
+    const SPEED_FACTOR = typeof speedFactor === "number" ? speedFactor : 1.0;
+    const CANVAS_Z_INDEX = typeof zIndex === "number" ? zIndex : 1;
+    const MAX_DPR = 1.0; // cap DPR aggressively for performance
+    const PERF_SAMPLES = 30; // rolling window for FPS estimation
+
     // Ensure we have a foreground canvas appended to <body> so it can
     // reliably sit above the page content (avoid ancestor transform stacking contexts).
     let fgCanvas = fgCanvasRef.current;
@@ -86,7 +98,7 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef 
         width: "100%",
         height: "100%",
         pointerEvents: "none",
-        zIndex: "5",
+        zIndex: `${CANVAS_Z_INDEX + 4}`,
       });
       document.body.appendChild(fgCanvas);
       fgCanvasRef.current = fgCanvas;
@@ -94,7 +106,7 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef 
     }
 
     const bgCtx = bgCanvas.getContext("2d");
-    const fgCtx = fgCanvas.getContext("2d");
+    const fgCtx = fgCanvas?.getContext("2d");
     if (!bgCtx || !fgCtx) {
       if (createdFg && fgCanvas && fgCanvas.parentNode) {
         fgCanvas.parentNode.removeChild(fgCanvas);
@@ -102,14 +114,6 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef 
       }
       return;
     }
-
-    // Config
-    const BASE_DROPS = 450; // increased base count for denser rain
-    const MAX_DROPS = 620; // hard cap
-    const MIN_DROPS = 250; // allow much lower counts on weak devices
-    const BASE_ANGLE = 12; // degrees (10-15)
-    const MAX_DPR = 1.0; // cap DPR aggressively for performance
-    const PERF_SAMPLES = 30; // rolling window for FPS estimation
 
     let dpr = Math.min(MAX_DPR, Math.max(1, window.devicePixelRatio || 1));
     let w = window.innerWidth;
@@ -207,26 +211,26 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef 
       // layer-specific angle and speed ranges
       let angleDeg = BASE_ANGLE;
       let len = lerp(8, 110, z);
-      let speed = lerp(320, 1400, z);
+      let speed = lerp(320, 1400, z) * SPEED_FACTOR;
       let width = lerp(0.12, 1.0, z);
       let alpha = lerp(0.02, 0.22, z);
 
       if (layer === "far") {
-        angleDeg = 5 + (Math.random() - 0.5) * 2; // ~5deg
-        speed = lerp(140, 420, z);
+        angleDeg = BASE_ANGLE === 0 ? (Math.random() - 0.5) * 2 : 5 + (Math.random() - 0.5) * 2; // ~5deg or near-vertical when vertical mode
+        speed = lerp(140, 420, z) * SPEED_FACTOR;
         len = lerp(8, 90, z);
         width = lerp(0.08, 0.34, z);
         alpha = lerp(0.01, 0.08, z);
       } else if (layer === "mid") {
         angleDeg = BASE_ANGLE + (Math.random() - 0.5) * 3; // current feel
-        speed = lerp(420, 1080, z);
+        speed = lerp(420, 1080, z) * SPEED_FACTOR;
         len = lerp(14, 120, z);
         width = lerp(0.16, 1.25, z);
         alpha = lerp(0.03, 0.24, z);
       } else {
         // near
-        angleDeg = 9 + (Math.random() - 0.5) * 2; // ~8-10deg for a more consistent fall
-        speed = lerp(700, 1560, z);
+        angleDeg = BASE_ANGLE === 0 ? (Math.random() - 0.5) * 2 : 9 + (Math.random() - 0.5) * 2; // ~8-10deg or near-vertical when vertical mode
+        speed = lerp(700, 1560, z) * SPEED_FACTOR;
         len = lerp(24, 180, z);
         width = lerp(0.24, 2.0, z);
         alpha = lerp(0.08, 0.48, z);
@@ -288,13 +292,20 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef 
     let wind = (Math.random() - 0.5) * 40;
     let windTarget = wind;
     let windTimer = 0;
+    let pointerX = 0;
 
     const onScroll = () => {
       const docH = document.documentElement.scrollHeight - window.innerHeight;
       const p = docH > 0 ? window.scrollY / docH : 0;
       scrollRef.current = clamp(p, 0, 1);
     };
+
+    const onPointerMove = (event: PointerEvent) => {
+      pointerX = ((event.clientX / window.innerWidth) - 0.5) * 2;
+    };
+
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
     onScroll();
 
     bgCtx.lineCap = "round";
@@ -353,13 +364,16 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef 
         return;
       }
 
-      // subtle drifting wind target
+      // subtle drifting wind target + mouse-based angle influence
       windTimer += dt;
       if (windTimer > 2.5) {
         windTimer = 0;
-        windTarget = (Math.random() - 0.5) * 60 * (0.5 + scrollRef.current * 1.2);
+        windTarget = (Math.random() - 0.5) * 70 * (0.6 + scrollRef.current * 1.3);
       }
-      wind += (windTarget - wind) * dt * 0.5;
+      const pointerWind = pointerX * 42 * (0.6 + scrollRef.current * 0.95);
+      const desiredWind = windTarget + pointerWind;
+      wind += (desiredWind - wind) * dt * 0.82;
+      const pointerAngle = pointerX * 0.12 * (0.7 + scrollRef.current * 0.6);
 
       // performance tracking (ring buffer)
       perfSum -= perfBuf[perfIdx];
@@ -459,7 +473,7 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef 
       // speed multiplier: stronger scroll-based boost
       const scrollSpeedBoost = 1 + scrollRef.current * 0.24;
       const speedBoost = clamp(0.7 + Math.min(speedRef.current, 9) * 0.18, 0.95, 2.0);
-      const globalSpeedMult = (0.68 + perfScale * 0.36) * scrollSpeedBoost * speedBoost;
+      const globalSpeedMult = (0.68 + perfScale * 0.36) * scrollSpeedBoost * speedBoost * SPEED_FACTOR;
 
       // no additive glow — use source-over
       bgCtx.globalCompositeOperation = "source-over";
@@ -479,11 +493,14 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef 
       // draw far layer (almost vertical, slow, faint) into background ctx
       for (let i = 0; i < farDraw; i++) {
         const d = farDrops[i];
-        d.x += (d.vx + windLocal) * dt * globalSpeedMult;
-        d.y += d.vy * dt * globalSpeedMult;
+        const currentAngle = d.angle + pointerAngle * 0.7;
+        const vx = Math.sin(currentAngle) * d.speed;
+        const vy = Math.cos(currentAngle) * d.speed;
+        d.x += (vx + windLocal) * dt * globalSpeedMult;
+        d.y += vy * dt * globalSpeedMult;
         if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
-        const tailX = d.x + d.ox;
-        const tailY = d.y + d.oy;
+        const tailX = d.x - Math.sin(currentAngle) * d.len;
+        const tailY = d.y - Math.cos(currentAngle) * d.len;
         const midX = tailX + (d.x - tailX) * d.midRatio + d.mx * 0.25;
         const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.25;
         const pulse = 0.92 + Math.sin(t * d.widthFreq + d.widthPhase) * 0.06;
@@ -509,11 +526,14 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef 
       // draw mid layer (main) into background ctx
       for (let i = 0; i < midDraw; i++) {
         const d = midDrops[i];
-        d.x += (d.vx + windLocal) * dt * globalSpeedMult;
-        d.y += d.vy * dt * globalSpeedMult;
+        const currentAngle = d.angle + pointerAngle * 0.8;
+        const vx = Math.sin(currentAngle) * d.speed;
+        const vy = Math.cos(currentAngle) * d.speed;
+        d.x += (vx + windLocal) * dt * globalSpeedMult;
+        d.y += vy * dt * globalSpeedMult;
         if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
-        const tailX = d.x + d.ox;
-        const tailY = d.y + d.oy;
+        const tailX = d.x - Math.sin(currentAngle) * d.len;
+        const tailY = d.y - Math.cos(currentAngle) * d.len;
         const midX = tailX + (d.x - tailX) * d.midRatio + d.mx * 0.35;
         const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.35;
         const pulse = 0.9 + Math.sin(t * d.widthFreq + d.widthPhase) * 0.07;
@@ -556,11 +576,14 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef 
         }
 
         const burstFactor = d.burstActive ? 1 + (d.burstStrength - 1) * (1 - d.burstTime / d.burstDuration) : 1;
-        d.x += (d.vx + windLocal * 1.05) * dt * globalSpeedMult;
-        d.y += d.vy * dt * globalSpeedMult * burstFactor;
+        const currentAngle = d.angle + pointerAngle;
+        const vx = Math.sin(currentAngle) * d.speed;
+        const vy = Math.cos(currentAngle) * d.speed;
+        d.x += (vx + windLocal * 1.05) * dt * globalSpeedMult;
+        d.y += vy * dt * globalSpeedMult * burstFactor;
         if (d.y - d.len > h + 40 || d.x < -300 || d.x > w + 300) resetDrop(d, true);
-        const tailX = d.x + d.ox;
-        const tailY = d.y + d.oy;
+        const tailX = d.x - Math.sin(currentAngle) * d.len;
+        const tailY = d.y - Math.cos(currentAngle) * d.len;
         const midX = tailX + (d.x - tailX) * d.midRatio + d.mx * 0.45;
         const midY = tailY + (d.y - tailY) * d.midRatio + d.my * 0.45;
         const pulse = 0.9 + Math.sin(t * d.widthFreq + d.widthPhase) * 0.08;
@@ -600,6 +623,7 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef 
     return () => {
       window.removeEventListener("resize", setSize);
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pointermove", onPointerMove);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       // remove programmatically created foreground canvas if we added one
       if (createdFg && fgCanvasRef.current && fgCanvasRef.current.parentNode) {
@@ -624,7 +648,7 @@ export function RainCanvas({ speedRef, onThunder, lightningEnabled, rainFadeRef 
         width: "100%",
         height: "100%",
         pointerEvents: "none",
-        zIndex: 1,
+        zIndex: zIndex ?? 1,
       }}
     />
   );

@@ -53,6 +53,15 @@ export function HeroScene() {
   const [buttonPressed, setButtonPressed] = useState(false);
   const [actionPressed, setActionPressed] = useState(false);
   const [actionWaveActive, setActionWaveActive] = useState(false);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [finalSceneActive, setFinalSceneActive] = useState(false);
+  const [finalSceneComplete, setFinalSceneComplete] = useState(false);
+  const finalRainSpeedRef = useRef(9);
+  const finalRainFadeRef = useRef({ value: 1 });
+  const holdProgressRef = useRef({ value: 0 });
+  const holdTweenRef = useRef<gsap.core.Tween | null>(null);
+  const heroZoomRef = useRef<gsap.core.Tween | null>(null);
+  const finalTimelineRef = useRef<gsap.core.Timeline | null>(null);
 
   const enableAudioPlayback = async (): Promise<boolean> => {
     if (audioEnabledRef.current) return true;
@@ -726,32 +735,154 @@ export function HeroScene() {
     }
   };
 
+  const resetHoldProgress = () => {
+    if (holdTweenRef.current) {
+      holdTweenRef.current.kill();
+      holdTweenRef.current = null;
+    }
+    holdProgressRef.current.value = 0;
+    setHoldProgress(0);
+  };
+
+  const handleHoldComplete = () => {
+    setActionWaveActive(false);
+    setActionPressed(false);
+    setHoldProgress(1);
+    setFinalSceneActive(true);
+    setTimeout(() => {
+      setFinalSceneComplete(true);
+    }, 500);
+    gsap.to(".hero-stage", {
+      scale: 1.9,
+      duration: 0.8,
+      ease: "power4.in",
+    });
+    if (finalTimelineRef.current) {
+      finalTimelineRef.current.kill();
+    }
+    finalTimelineRef.current = gsap.timeline().set(".final-overlay", {
+      opacity: 1,
+      visibility: "visible",
+      pointerEvents: "auto",
+    }).to(
+      ".final-flash",
+      {
+        opacity: 1,
+        duration: 0.12,
+        ease: "power4.in",
+      },
+      0,
+    ).to(
+      ".final-flash",
+      {
+        opacity: 0,
+        duration: 0.08,
+        ease: "power1.out",
+      },
+      0.12,
+    ).to(
+      "#smooth-wrapper",
+      {
+        opacity: 0,
+        duration: 0.2,
+        ease: "power4.in",
+      },
+      0.05,
+    ).to(
+      ".final-overlay",
+      {
+        backgroundColor: "#fbfbfd",
+        duration: 0.2,
+        ease: "power4.in",
+      },
+      0.05,
+    );
+  };
+
   const handleActionPointerDown = () => {
+    if (finalSceneComplete) return;
     setActionPressed(true);
     setActionWaveActive(true);
+    heroZoomRef.current?.kill();
+    heroZoomRef.current = gsap.to(".hero-stage", {
+      scale: 1.78,
+      duration: 1.3,
+      ease: "power2.out",
+    });
+    resetHoldProgress();
+    holdTweenRef.current = gsap.to(holdProgressRef.current, {
+      value: 1,
+      duration: 3,
+      ease: "linear",
+      onUpdate: () => {
+        setHoldProgress(holdProgressRef.current.value);
+      },
+      onComplete: handleHoldComplete,
+    });
   };
 
   const handleActionPointerUp = () => {
+    if (finalSceneComplete) return;
     setActionPressed(false);
     setActionWaveActive(false);
+    heroZoomRef.current?.kill();
+    gsap.to(".hero-stage", {
+      scale: 1.75,
+      duration: 0.35,
+      ease: "power2.out",
+    });
+    resetHoldProgress();
   };
 
   const handleActionPointerCancel = () => {
+    if (finalSceneComplete) return;
     setActionPressed(false);
     setActionWaveActive(false);
+    heroZoomRef.current?.kill();
+    gsap.to(".hero-stage", {
+      scale: 1.75,
+      duration: 0.35,
+      ease: "power2.out",
+    });
+    resetHoldProgress();
   };
 
   const handleActionKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (finalSceneComplete) return;
     if (event.key === " " || event.key === "Enter" || event.key === "Spacebar") {
       setActionPressed(true);
       setActionWaveActive(true);
+      heroZoomRef.current?.kill();
+      heroZoomRef.current = gsap.to(".hero-stage", {
+        scale: 1.78,
+        duration: 1.3,
+        ease: "power2.out",
+      });
+      resetHoldProgress();
+      holdTweenRef.current = gsap.to(holdProgressRef.current, {
+        value: 1,
+        duration: 2,
+        ease: "linear",
+        onUpdate: () => {
+          setHoldProgress(holdProgressRef.current.value);
+        },
+        onComplete: handleHoldComplete,
+      });
     }
   };
 
   const handleActionKeyUp = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (finalSceneComplete) return;
     if (event.key === " " || event.key === "Enter" || event.key === "Spacebar") {
       setActionPressed(false);
       setActionWaveActive(false);
+      heroZoomRef.current?.kill();
+      gsap.to(".hero-stage", {
+        scale: 1.75,
+        duration: 0.35,
+        ease: "power2.out",
+      });
+      resetHoldProgress();
     }
   };
 
@@ -911,6 +1042,7 @@ export function HeroScene() {
           type="button"
           className={`trigger scroll-action-button ${actionPressed ? "pressed" : ""}`}
           aria-label="Focus action"
+          style={{ "--hold-progress": holdProgress } as React.CSSProperties}
           onPointerDown={handleActionPointerDown}
           onPointerUp={handleActionPointerUp}
           onPointerLeave={handleActionPointerCancel}
@@ -923,6 +1055,22 @@ export function HeroScene() {
         <div className={`dots action-dots ${actionWaveActive ? "hold-wave-active" : ""}`}>
           <span className="dot" />
         </div>
+      </div>
+    </div>
+    {finalSceneActive && (
+      <RainCanvas
+        speedRef={finalRainSpeedRef}
+        lightningEnabled={false}
+        rainFadeRef={finalRainFadeRef}
+        baseAngle={0}
+        speedFactor={1.8}
+        zIndex={9999}
+      />
+    )}
+    <div className={`final-overlay${finalSceneActive ? " active" : ""}${finalSceneComplete ? " complete" : ""}`} aria-hidden={!finalSceneActive}>
+      <div className={`final-text-wrapper${finalSceneComplete ? " visible" : ""}`}>
+        <span className="final-text">YOU CHOSE TO MOVE</span>
+        <span className="final-subtext">by Iona Takeru</span>
       </div>
     </div>
     </>
